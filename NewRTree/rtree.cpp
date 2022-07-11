@@ -360,10 +360,18 @@ bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
 {
 	if (_root == nullptr) return false;
 
+	if (_size == 1) {
+		_size = 0;
+		_height = 0;
+		delete _root;
+		_root = nullptr;
+		return true;
+	}
+
 	std::queue<Node*> bfs;
 	bfs.push(_root);
-	Node* current;
-	MBB* toReinsert;
+	Node* current= nullptr;
+	MBB* toReinsert = nullptr;
 	void* toDelete = nullptr;
 
 	while (!(bfs.empty())) {
@@ -386,7 +394,6 @@ bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
 
 BFS_END:
 	if (toDelete == nullptr) return false;
-
 	while (current->parent != nullptr && current->parent->regions.size() == 1) {
 		toReinsert = &(findChild(*(current->parent), current));
 		current = current->parent;
@@ -394,15 +401,16 @@ BFS_END:
 	void* subTree = removeSubTree(*current, *toReinsert);
 	if (subTree == toDelete) {
 		delete toDelete;
-		return;
+		return true;
 	}
-	
+	reinsertExcept(*((Node*)subTree), toDelete);
+	delete subTree;
+	delete toDelete;
 	return true;
 }
 
 bool RTree::isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb)
 {
-	
 	return 
 		(mbb.min.x <= min.x && mbb.max.x >= max.x) &&
 		(mbb.min.y <= min.y && mbb.max.y >= max.y);
@@ -410,16 +418,6 @@ bool RTree::isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb)
 
 void* RTree::removeSubTree(Node& current, MBB& toReinsert)
 {
-	if (_size == 1) {
-		_size = 0;
-		_height = 0;
-		delete _root;
-		_root = nullptr;
-		return;
-	}
-
-	_size--;
-	_height = ceil(log2(_size + 1) / log2ORDER) + 1;
 	void* subTree = toReinsert.child;
 	auto it = std::find_if(std::begin(current.regions), std::end(current.regions), 
 		[&toReinsert](MBB& a) { return &a == &toReinsert;  });
@@ -427,6 +425,12 @@ void* RTree::removeSubTree(Node& current, MBB& toReinsert)
 
 	updateParentsAfterRemoval(current);
 
+	if (current.leaf) {
+		_size -= 1;
+		_height = ceil(log2(_size + 1) / log2ORDER) + 1;
+		return subTree;
+	}
+	updateSizeAfterRemoval(*((Node*)subTree));
 	return subTree;
 }
 
@@ -448,5 +452,33 @@ void RTree::updateParentsAfterRemoval(Node& current)
 	mbb.max = { xmax->max.x, ymax->max.y };
 
 	updateParentsAfterRemoval(*(current.parent));
+}
+
+void RTree::updateSizeAfterRemoval(Node& subCurrent)
+{
+	if (subCurrent.leaf) {
+		_size -= subCurrent.regions.size();
+		_height = ceil(log2(_size + 1) / log2ORDER) + 1;
+	}
+	else {
+		for (auto& mbb : subCurrent.regions) {
+			updateSizeAfterRemoval(*((Node*)(mbb.child)));
+		}
+	}
+}
+
+void RTree::reinsertExcept(Node& subCurrent, void* except)
+{
+	if (subCurrent.leaf) {
+		for (auto& mbb : subCurrent.regions) {
+			if(mbb.child != except) insertHelper(mbb);
+		}
+	}
+	else {
+		for (auto& mbb : subCurrent.regions) {
+			updateSizeAfterRemoval(*((Node*)(mbb.child)));
+			delete mbb.child;
+		}
+	}
 }
 

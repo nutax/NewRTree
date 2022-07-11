@@ -47,14 +47,15 @@ private:
 	float computeDensity(MBB const& a, MBB const& b);
 	float computeArea(float xmin, float ymin, float xmax, float ymax);
 	void expandMBB(MBB& expand, MBB const& include);
-	MBB split(Node* node, MBB& mbb);
+	MBB split(Node& node, MBB& mbb, MBB& newMBB);
+	MBB& findChild(Node const& parent, void* child);
 	void reinsertExcept(std::stack<Node*>& stack, void* except);
 	void updateParentsAfterRemoval(std::stack<Node*>& stack);
 	void getFirstIntersection(Node const& node, MBB const& mbb);
 	
 
 	
-	int _size;
+	size_t _size;
 	Node* _root;
 	inline static const float log2ORDER = log2(ORDER);
 };

@@ -42,20 +42,31 @@ void RTree::insertHelper(MBB mbb)
 		auto bestMBB = std::max_element(std::begin(current->regions), std::end(current->regions),
 			[this, &mbb](MBB const& a, MBB const& b) {return computeDensity(a, mbb) < computeDensity(b, mbb); });
 		expandMBB(*bestMBB, mbb);
+		current = (Node*) (bestMBB->child);
 	}
 
-	MBB splittedMBB;
+	MBB updatedMBB;
 	while (true) {
 		if (current->regions.size() < ORDER) {
 			current->regions.push_back(mbb);
 			return;
 		}
 
-		splittedMBB = split(current, mbb);
+		split(*current, mbb, updatedMBB);
 
 		if (current->parent == nullptr) break;
+		
+		findChild(*(current->parent), current) = updatedMBB;
 	}
 
+	Node* newRoot = new Node;
+	newRoot->regions.push_back(updatedMBB);
+	newRoot->regions.push_back(mbb);
+	Node* a = (Node*) (updatedMBB.child);
+	Node* b = (Node*) (mbb.child);
+	a->left = b;
+	b->right = a;
+	_root = newRoot;
 }
 
 float RTree::computeDensity(MBB const& a, MBB const& b)
@@ -70,10 +81,18 @@ float RTree::computeDensity(MBB const& a, MBB const& b)
 		computeArea(b.min.x, b.min.y, b.max.x, b.max.y);
 	float const volume = computeArea(xmin, ymin, xmax, ymax);
 
-	return (mass / volume) * (mass < volume) + (mass >= volume);
+	return mass / volume;
 }
 
 float RTree::computeArea(float xmin, float ymin, float xmax, float ymax)
 {
 	return (xmax - xmin)*(ymax - ymin);
+}
+
+void RTree::expandMBB(MBB& expand, MBB const& include)
+{
+	expand.min.x = std::min(expand.min.x, include.min.x);
+	expand.min.y = std::min(expand.min.y, include.min.y);
+	expand.max.x = std::max(expand.max.x, include.max.x);
+	expand.max.y = std::max(expand.max.y, include.max.y);
 }

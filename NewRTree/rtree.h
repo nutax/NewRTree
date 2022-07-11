@@ -36,11 +36,11 @@ public:
 	~RTree();
 	void insert(Poly const& poly);
 	void print();
-	void erase(Vec2 const& vec2);
+	/*void erase(Vec2 const& vec2);
 	void forEachPoly(std::function<void(Poly const&)> const& fun);
 	void forEachMBB(std::function<void(MBB const&, int, int)> const& fun);
 	void forEachNearest(int k, Vec2 const& vec2, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun);
-	size_t size() const;
+	size_t size() const;*/
 
 private:
 	void freeMemory(Node* current);
@@ -51,9 +51,9 @@ private:
 	void expandMBB(MBB& expand, MBB const& include);
 	void split(Node& node, MBB& mbb, MBB& newMBB);
 	MBB& findChild(Node& parent, void* child);
-	void reinsertExcept(std::stack<Node*>& stack, void* except);
+	/*void reinsertExcept(std::stack<Node*>& stack, void* except);
 	void updateParentsAfterRemoval(std::stack<Node*>& stack);
-	void getFirstIntersection(Node const& node, MBB const& mbb);
+	void getFirstIntersection(Node const& node, MBB const& mbb);*/
 	
 
 	

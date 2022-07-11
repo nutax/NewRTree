@@ -33,7 +33,21 @@ void RTree::insert(Poly const& poly)
 
 void RTree::print()
 {
-
+	std::queue<Node*> bfs;
+	bfs.push(_root);
+	while (!(bfs.empty())) {
+		auto& front = bfs.front();
+		for (auto& mbb : front->regions) {
+			std::printf(" R[ X1:%f, Y1:%f, X2:%f, Y2:%f ] ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y);
+		}
+		std::printf("\n\n");
+		if (!(front->leaf)) {
+			for (auto& mbb : front->regions) {
+				bfs.push((Node*)(mbb.child));
+			}
+		}
+		bfs.pop();
+	}
 }
 
 MBB RTree::buildMBB(Poly const& poly)

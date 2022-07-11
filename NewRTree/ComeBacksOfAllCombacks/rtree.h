@@ -72,6 +72,7 @@ private:
 	void forEachPolyHelper(std::function<void(Poly const&)> const& fun, Node& current);
 	void forEachMBBHelper(std::function<void(MBB const&, int, int)> const& fun, Node& current, int lvl);
 	std::tuple<Vec2, float> computeMinDist(Vec2 const& fromPoint, MBB const& toMBB);
+	void testOverlappingHelper(Vec2 const& testPoint, Node& current, float& counter);
 	bool isInside(Vec2 const& vec2, MBB const& mbb);
 	/*void reinsertExcept(std::stack<Node*>& stack, void* except);
 	void updateParentsAfterRemoval(std::stack<Node*>& stack);

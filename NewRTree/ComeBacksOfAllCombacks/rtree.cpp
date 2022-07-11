@@ -129,27 +129,10 @@ size_t RTree::size() const
 
 float RTree::testOverlapping(std::vector<Vec2> const& testPoints)
 {
-	if (_root == nullptr) return 0;
-	float overlapping = 0;
-	float total = 0;
-	std::queue<Node*> bfs;
-	bfs.push(_root);
-	while (!(bfs.empty())) {
-		auto& front = bfs.front();
-		for (auto& mbb : front->regions) {
-			total += 1;
-			for (auto const& testPoint : testPoints) {
-				if (isInside(testPoint, mbb)) overlapping += 1;
-			}
-		}
-		if (!(front->leaf)) {
-			for (auto& mbb : front->regions) {
-				bfs.push((Node*)(mbb.child));
-			}
-		}
-		bfs.pop();
-	}
-	return (overlapping) / (total * testPoints.size());
+	float overlapping;
+	for (auto const& testPoint : testPoints)
+		testOverlappingHelper(testPoint, *_root, overlapping);
+	return overlapping/testPoints.size();
 }
 
 MBB RTree::buildMBB(Poly const& poly)
@@ -349,6 +332,18 @@ std::tuple<Vec2, float> RTree::computeMinDist(Vec2 const& fromPoint, MBB const& 
 	float const distance = xdiff * xdiff + ydiff * ydiff;
 
 	return {toPoint, distance};
+}
+
+void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, float& counter)
+{
+	for (auto& mbb : current.regions) {
+		if (isInside(testPoint, mbb)) {
+			counter += 1;
+			if (!(current.leaf)) {
+				testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter);
+			}
+		}
+	}
 }
 
 bool RTree::isInside(Vec2 const& vec2, MBB const& mbb)

@@ -75,9 +75,10 @@ private:
 	bool isInside(Vec2 const& vec2, MBB const& mbb);
 	bool eraseHelper(Vec2 const& min, Vec2 const& max);
 	bool isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb);
-	void reinsertExcept(void* except);
-	void updateParentsAfterRemoval(std::stack<Node*>& stack);
-	void getFirstIntersection(Node const& node, MBB const& mbb);
+	void* removeSubTree(Node& current, MBB& toReinsert);
+	void updateParentsAfterRemoval(Node& current);
+	void updateSizeAfterRemoval(Node& current);
+	void reinsertExcept(Node& subCurrent, void* except);
 	
 
 	

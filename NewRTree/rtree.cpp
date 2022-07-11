@@ -363,7 +363,8 @@ bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
 	std::queue<Node*> bfs;
 	bfs.push(_root);
 	Node* current;
-	MBB* toDelete = nullptr;
+	MBB* toReinsert;
+	void* toDelete = nullptr;
 
 	while (!(bfs.empty())) {
 		auto& front = bfs.front();
@@ -371,7 +372,8 @@ bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
 			if (isIntersecting(min, max, mbb)) {
 				if (front->leaf) {
 					current = front;
-					toDelete = &mbb;
+					toReinsert = &mbb;
+					toDelete = mbb.child;
 					goto BFS_END;
 				}
 				else {
@@ -386,16 +388,65 @@ BFS_END:
 	if (toDelete == nullptr) return false;
 
 	while (current->parent != nullptr && current->parent->regions.size() == 1) {
-		toDelete = &(findChild(*(current->parent), current));
+		toReinsert = &(findChild(*(current->parent), current));
 		current = current->parent;
 	}
-	reinsertExcept(toDelete);
+	void* subTree = removeSubTree(*current, *toReinsert);
+	if (subTree == toDelete) {
+		delete toDelete;
+		return;
+	}
+	
 	return true;
 }
 
 bool RTree::isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb)
 {
+	
+	return 
+		(mbb.min.x <= min.x && mbb.max.x >= max.x) &&
+		(mbb.min.y <= min.y && mbb.max.y >= max.y);
+}
 
-	return false;
+void* RTree::removeSubTree(Node& current, MBB& toReinsert)
+{
+	if (_size == 1) {
+		_size = 0;
+		_height = 0;
+		delete _root;
+		_root = nullptr;
+		return;
+	}
+
+	_size--;
+	_height = ceil(log2(_size + 1) / log2ORDER) + 1;
+	void* subTree = toReinsert.child;
+	auto it = std::find_if(std::begin(current.regions), std::end(current.regions), 
+		[&toReinsert](MBB& a) { return &a == &toReinsert;  });
+	current.regions.erase(it);
+
+	updateParentsAfterRemoval(current);
+
+	return subTree;
+}
+
+void RTree::updateParentsAfterRemoval(Node& current)
+{
+	if (current.parent == nullptr) return;
+
+	auto xmin = std::min_element(std::begin(current.regions), std::end(current.regions),
+		[](MBB const& a, MBB const& b) {return a.min.x < b.min.x; });
+	auto ymin = std::min_element(std::begin(current.regions), std::end(current.regions),
+		[](MBB const& a, MBB const& b) {return a.min.y < b.min.y; });
+	auto xmax = std::min_element(std::begin(current.regions), std::end(current.regions),
+		[](MBB const& a, MBB const& b) {return a.max.x < b.max.x; });
+	auto ymax = std::min_element(std::begin(current.regions), std::end(current.regions),
+		[](MBB const& a, MBB const& b) {return a.max.y < b.max.y; });
+
+	MBB& mbb = findChild(*(current.parent), &current);
+	mbb.min = { xmin->min.x, ymin->min.y };
+	mbb.max = { xmax->max.x, ymax->max.y };
+
+	updateParentsAfterRemoval(*(current.parent));
 }
 

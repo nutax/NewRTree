@@ -45,7 +45,7 @@ private:
 	MBB buildMBB(Poly const& poly);
 	void insertHelper(MBB mbb);
 	float computeDensity(MBB const& a, MBB const& b);
-	MBB& getBestMBB(Node const& node, MBB const& mbb);
+	float computeArea(float xmin, float ymin, float xmax, float ymax);
 	void expandMBB(MBB& expand, MBB const& include);
 	MBB split(Node* node, MBB& mbb);
 	void reinsertExcept(std::stack<Node*>& stack, void* except);

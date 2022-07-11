@@ -57,3 +57,23 @@ void RTree::insertHelper(MBB mbb)
 	}
 
 }
+
+float RTree::computeDensity(MBB const& a, MBB const& b)
+{
+	float const xmin = std::min(a.min.x, b.min.x);
+	float const ymin = std::min(a.min.y, b.min.y);
+	float const xmax = std::max(a.max.x, b.max.x);
+	float const ymax = std::max(a.max.y, b.max.y);
+
+
+	float const mass = computeArea(a.min.x, a.min.y, a.max.x, a.max.y) + 
+		computeArea(b.min.x, b.min.y, b.max.x, b.max.y);
+	float const volume = computeArea(xmin, ymin, xmax, ymax);
+
+	return (mass / volume) * (mass < volume) + (mass >= volume);
+}
+
+float RTree::computeArea(float xmin, float ymin, float xmax, float ymax)
+{
+	return (xmax - xmin)*(ymax - ymin);
+}

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <math.h>
 #include <stdint.h>
+#include <limits.h>
 
 #define ORDER 3
 
@@ -16,14 +17,14 @@ struct Vec2 {
 
 struct MBB {
 	int z;
-	Vec2 p1, p2;
+	Vec2 min, max;
 	void* child;
 };
 
 struct Node {
-	int leaf;
+	int leaf = 1;
 	std::vector<MBB> regions;
-	Node *parent, *left, *right;
+	Node *parent = nullptr, *left = nullptr, *right = nullptr;
 };
 
 using Poly = std::vector<Vec2>;
@@ -41,15 +42,16 @@ public:
 	void print();
 
 private:
+	MBB buildMBB(Poly const& poly);
+	void insertHelper(MBB mbb);
+	float computeDensity(MBB const& a, MBB const& b);
+	MBB& getBestMBB(Node const& node, MBB const& mbb);
+	void expandMBB(MBB& expand, MBB const& include);
+	MBB split(Node* node, MBB& mbb);
 	void reinsertExcept(std::stack<Node*>& stack, void* except);
 	void updateParentsAfterRemoval(std::stack<Node*>& stack);
-	void insertHelper(MBB mbb, void* child);
 	void getFirstIntersection(Node const& node, MBB const& mbb);
-	MBB split(Node& A, MBB& mbb, void* child);
-	void expandMBB(MBB& expand, MBB const& include);
-	int joinBestMBB(Node& node, MBB const& mbb);
-	float computeDelta(MBB const& a, MBB const& b);
-	MBB buildMBB(Poly const& poly);
+	
 
 	
 	int _size;

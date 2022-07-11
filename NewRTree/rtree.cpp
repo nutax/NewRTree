@@ -4,6 +4,7 @@ RTree::RTree()
 {
 	_root = nullptr;
 	_size = 0;
+	_height = 0;
 }
 
 RTree::~RTree()
@@ -52,6 +53,88 @@ void RTree::print()
 	}
 }
 
+void RTree::erase(Vec2 const& min, Vec2 const& max)
+{
+	MBB mbb = { 0, min, max, nullptr };
+
+
+}
+
+void RTree::forEachPoly(std::function<void(Poly const&)> const& fun)
+{
+	if(_root != nullptr) forEachPolyHelper(fun, *_root);
+}
+
+void RTree::forEachMBB(std::function<void(MBB const&, int, int)> const& fun)
+{
+	if (_root != nullptr) forEachMBBHelper(fun, *_root, 0);
+}
+
+void RTree::forEachNearest(int k, Vec2 const& fromPoint, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun)
+{
+	if (_root == nullptr) return;
+
+	auto compareNeighbor = [](Neighbor const& a, Neighbor const& b) {
+		return a.distance < b.distance;
+	};
+	auto compareNeighborhood = [](Neighborhood const& a, Neighborhood const& b) {
+		return a.distance > b.distance;
+	};
+
+	std::priority_queue<Neighbor, std::vector<Neighbor>,
+		decltype(compareNeighbor)> neighbors{compareNeighbor};
+	std::priority_queue<Neighborhood, std::vector<Neighborhood>,
+		decltype(compareNeighborhood)> neighborhoods{ compareNeighborhood };
+
+	for (int i = 0; i < k; ++i) neighbors.push({ nullptr, std::numeric_limits<float>::max() });
+	neighborhoods.push({ _root, 0 });
+
+	while (!(neighborhoods.empty())) {
+		auto closestNeighborhood = neighborhoods.top(); neighborhoods.pop();
+		auto const& farestNeighbor = neighbors.top();
+		if (closestNeighborhood.distance < farestNeighbor.distance) {
+			if (closestNeighborhood.node->leaf) {
+				for (auto& mbb : closestNeighborhood.node->regions) {
+					auto const& farestNeighbor = neighbors.top();
+					auto [ toPoint, distance ] = computeMinDist(fromPoint, mbb);
+					if (distance < farestNeighbor.distance) {
+						neighbors.pop();
+						neighbors.push({((Poly*)(mbb.child)), distance, toPoint});
+					}
+				}
+			}
+			else {
+				for (auto& mbb : closestNeighborhood.node->regions) {
+					auto [toPoint, distance] = computeMinDist(fromPoint, mbb);
+					if (distance < farestNeighbor.distance) {
+						neighborhoods.push({ ((Node*)(mbb.child)), distance });
+					}
+				}
+			}
+		}
+	}
+
+	while (!(neighbors.empty())) {
+		auto [poly, distance, toPoint] = neighbors.top();
+		neighbors.pop();
+		if (poly == nullptr) continue;
+		fun(*poly, fromPoint, toPoint, distance);
+	}
+}
+
+size_t RTree::size() const
+{
+	return _size;
+}
+
+float RTree::testOverlapping(std::vector<Vec2> const& testPoints)
+{
+	float overlapping;
+	for (auto const& testPoint : testPoints)
+		testOverlappingHelper(testPoint, *_root, overlapping);
+	return overlapping/testPoints.size();
+}
+
 MBB RTree::buildMBB(Poly const& poly)
 {
 	MBB mbb;
@@ -68,6 +151,7 @@ MBB RTree::buildMBB(Poly const& poly)
 void RTree::insertHelper(MBB newMBB)
 {
 	_size++;
+	_height = ceil(log2(_size + 1) / log2ORDER) + 1;
 	if (_root == nullptr) {
 		_root = new Node;
 		_root->regions.push_back(newMBB);
@@ -205,3 +289,67 @@ MBB& RTree::findChild(Node& parent, void* child)
 	}
 	std::runtime_error("COULD NOT FIND CHILD!");
 }
+
+void RTree::forEachPolyHelper(std::function<void(Poly const&)> const& fun, Node& current)
+{
+	if (current.leaf) {
+		for (auto& mbb : current.regions) {
+			fun(*((Poly*)(mbb.child)));
+		}
+	}
+	else {
+		for (auto& mbb : current.regions) {
+			forEachPolyHelper(fun, *((Node*)(mbb.child)));
+		}
+	}
+}
+
+void RTree::forEachMBBHelper(std::function<void(MBB const&, int, int)> const& fun, Node& current, int lvl)
+{
+	for (auto& mbb : current.regions) {
+		fun(mbb, lvl, _height);
+	}
+	if (!(current.leaf)) {
+		for (auto& mbb : current.regions) {
+			forEachMBBHelper(fun, *((Node*)(mbb.child)), lvl + 1);
+		}
+	}
+}
+
+std::tuple<Vec2, float> RTree::computeMinDist(Vec2 const& fromPoint, MBB const& toMBB)
+{
+	Vec2 toPoint;
+
+	toPoint.x = fromPoint.x + 
+		(fromPoint.x < toMBB.min.x) * (fromPoint.x - toMBB.min.x) +
+		(fromPoint.x > toMBB.max.x) * (toMBB.max.x - fromPoint.x);
+	toPoint.y = fromPoint.y +
+		(fromPoint.y < toMBB.min.y) * (fromPoint.y - toMBB.min.y) +
+		(fromPoint.y > toMBB.max.y) * (toMBB.max.y - fromPoint.y);
+
+	float const xdiff = toPoint.x - fromPoint.x;
+	float const ydiff = toPoint.y - fromPoint.y;
+	float const distance = xdiff * xdiff + ydiff * ydiff;
+
+	return {toPoint, distance};
+}
+
+void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, float& counter)
+{
+	for (auto& mbb : current.regions) {
+		if (isInside(testPoint, mbb)) {
+			counter += 1;
+			if (!(current.leaf)) {
+				testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter);
+			}
+		}
+	}
+}
+
+bool RTree::isInside(Vec2 const& vec2, MBB const& mbb)
+{
+	return
+		vec2.x >= mbb.min.x && vec2.x <= mbb.max.x &&
+		vec2.y >= mbb.min.y && vec2.y <= mbb.max.y;
+}
+

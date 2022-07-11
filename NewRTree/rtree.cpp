@@ -55,9 +55,7 @@ void RTree::print()
 
 void RTree::erase(Vec2 const& min, Vec2 const& max)
 {
-	MBB mbb = { 0, min, max, nullptr };
-
-
+	while (eraseHelper(min, max));
 }
 
 void RTree::forEachPoly(std::function<void(Poly const&)> const& fun)
@@ -129,7 +127,7 @@ size_t RTree::size() const
 
 float RTree::testOverlapping(std::vector<Vec2> const& testPoints)
 {
-	if (_root == nullptr) return 0;
+	if (_root == nullptr || testPoints.size() == 0) return 0;
 	float overlapping = 0;
 	float total = 0;
 	std::queue<Node*> bfs;
@@ -356,5 +354,48 @@ bool RTree::isInside(Vec2 const& vec2, MBB const& mbb)
 	return
 		vec2.x >= mbb.min.x && vec2.x <= mbb.max.x &&
 		vec2.y >= mbb.min.y && vec2.y <= mbb.max.y;
+}
+
+bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
+{
+	if (_root == nullptr) return false;
+
+	std::queue<Node*> bfs;
+	bfs.push(_root);
+	Node* current;
+	MBB* toDelete = nullptr;
+
+	while (!(bfs.empty())) {
+		auto& front = bfs.front();
+		for (auto& mbb : front->regions) {
+			if (isIntersecting(min, max, mbb)) {
+				if (front->leaf) {
+					current = front;
+					toDelete = &mbb;
+					goto BFS_END;
+				}
+				else {
+					bfs.push((Node*)(mbb.child));
+				}
+			}
+		}
+		bfs.pop();
+	}
+
+BFS_END:
+	if (toDelete == nullptr) return false;
+
+	while (current->parent != nullptr && current->parent->regions.size() == 1) {
+		toDelete = &(findChild(*(current->parent), current));
+		current = current->parent;
+	}
+	reinsertExcept(toDelete);
+	return true;
+}
+
+bool RTree::isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb)
+{
+
+	return false;
 }
 

@@ -73,9 +73,11 @@ private:
 	void forEachMBBHelper(std::function<void(MBB const&, int, int)> const& fun, Node& current, int lvl);
 	std::tuple<Vec2, float> computeMinDist(Vec2 const& fromPoint, MBB const& toMBB);
 	bool isInside(Vec2 const& vec2, MBB const& mbb);
-	/*void reinsertExcept(std::stack<Node*>& stack, void* except);
+	bool eraseHelper(Vec2 const& min, Vec2 const& max);
+	bool isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb);
+	void reinsertExcept(void* except);
 	void updateParentsAfterRemoval(std::stack<Node*>& stack);
-	void getFirstIntersection(Node const& node, MBB const& mbb);*/
+	void getFirstIntersection(Node const& node, MBB const& mbb);
 	
 
 	

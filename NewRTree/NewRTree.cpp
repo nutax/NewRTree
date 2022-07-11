@@ -2,19 +2,18 @@
 //
 
 #include <iostream>
+#include "rtree.h"
+
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    RTree r;
+    r.insert({ {5,5}, {10,10}, {15,5} });
+    r.insert({ {15,15}, {20,10}, {20,15} });
+    r.insert({ {35,10}, {35,15}, {40,10} });
+    r.insert({ {35,20}, {40,20}, {40,15} });
+    r.insert({ {30,0}, {30,5}, {35,5}, {40, 0}, {35, 0} });
+    r.print();
+    r.insert({ {40,5}, {45,10}, {45,0} });
+    r.print();
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

@@ -33,12 +33,14 @@ void RTree::insert(Poly const& poly)
 
 void RTree::print()
 {
+	std::printf("\n\n\nRTREE PRINT  | LINE == NODE |  BFS ORDER\n\n");
 	std::queue<Node*> bfs;
 	bfs.push(_root);
 	while (!(bfs.empty())) {
 		auto& front = bfs.front();
+		if (front->leaf) std::printf("LEAF ");
 		for (auto& mbb : front->regions) {
-			std::printf(" R[ X1:%f, Y1:%f, X2:%f, Y2:%f ] ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y);
+			std::printf("R[ X1:%f, Y1:%f, X2:%f, Y2:%f ]  ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y);
 		}
 		std::printf("\n\n");
 		if (!(front->leaf)) {
@@ -53,7 +55,7 @@ void RTree::print()
 MBB RTree::buildMBB(Poly const& poly)
 {
 	MBB mbb;
-	auto xmin = std::min_element(std::begin(poly), std::end(poly), [](Vec2 const& a, Vec2 const& b) {return a.y < b.y; });
+	auto xmin = std::min_element(std::begin(poly), std::end(poly), [](Vec2 const& a, Vec2 const& b) {return a.x < b.x; });
 	auto ymin = std::min_element(std::begin(poly), std::end(poly), [](Vec2 const& a, Vec2 const& b) {return a.y < b.y; });
 	auto xmax = std::max_element(std::begin(poly), std::end(poly), [](Vec2 const& a, Vec2 const& b) {return a.x < b.x; });
 	auto ymax = std::max_element(std::begin(poly), std::end(poly), [](Vec2 const& a, Vec2 const& b) {return a.y < b.y; });
@@ -92,15 +94,19 @@ void RTree::insertHelper(MBB newMBB)
 		if (current->parent == nullptr) break;
 		
 		findChild(*(current->parent), current) = updatedMBB;
+		current = current->parent;
 	}
 
 	Node* newRoot = new Node;
+	newRoot->leaf = 0;
 	newRoot->regions.push_back(updatedMBB);
 	newRoot->regions.push_back(newMBB);
 	Node* a = (Node*) (updatedMBB.child);
 	Node* b = (Node*) (newMBB.child);
 	a->left = b;
 	b->right = a;
+	a->parent = newRoot;
+	b->parent = newRoot;
 	_root = newRoot;
 }
 
@@ -145,7 +151,7 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 			if (density < minDensity) minDensity = density, seed1 = i, seed2 = j;
 		}
 	}
-
+	updatedMBB.child = &updatedNode;
 	updatedNode.regions.clear();
 	updatedNode.regions.push_back(regions[seed1]);
 	updatedMBB.min = updatedNode.regions.back().min;
@@ -154,6 +160,7 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 
 	newMBB.child = new Node;
 	Node& newNode = *((Node*)(newMBB.child));
+	newNode.leaf = updatedNode.leaf;
 	newNode.parent = updatedNode.parent;
 	newNode.regions.push_back(regions[seed2]);
 	newMBB.min = newNode.regions.back().min;

@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <exception>
+#include <cstdio>
 
 #define ORDER 3
 

@@ -82,7 +82,7 @@ private:
 	void updateSizeAfterRemoval(Node& subCurrent);
 	void reinsertExcept(Node& subCurrent, void* except);
 	void testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter);
-	void eraseRandomHelper();
+	std::tuple<Node*, MBB*> pickRandom(Node& current);
 
 	
 	size_t _size;

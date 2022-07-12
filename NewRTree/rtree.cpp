@@ -138,6 +138,41 @@ double RTree::testOverlapping(std::vector<Vec2> const& testPoints)
 	return (overlaps) / (_size * testPoints.size());
 }
 
+void RTree::eraseRandom()
+{
+	if (_root == nullptr) return;
+	if (_size == 1) {
+		_size = 0;
+		_height = 0;
+		delete _root;
+		_root = nullptr;
+	}
+	auto [current, toReinsert] = pickRandom(*_root);
+	void* toDelete = toReinsert->child;
+	while (current->parent != nullptr && current->regions.size() == MINIMUM) {
+		toReinsert = &(findChild(*(current->parent), current));
+		current = current->parent;
+	}
+	if (current->parent == nullptr) {
+		void* subTree = _root;
+		_root = nullptr;
+		_size = 0;
+		_height = 0;
+		reinsertExcept(*((Node*)subTree), toDelete);
+		delete subTree;
+		delete toDelete;
+		return;
+	}
+	void* subTree = removeSubTree(*current, *toReinsert);
+	if (subTree == toDelete) {
+		delete toDelete;
+		return;
+	}
+	reinsertExcept(*((Node*)subTree), toDelete);
+	delete subTree;
+	delete toDelete;
+}
+
 MBB RTree::buildMBB(Poly const& poly)
 {
 	MBB mbb;
@@ -522,5 +557,27 @@ void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, double& 
 			testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter);
 		}
 	}
+}
+
+std::tuple<Node*, MBB*> RTree::pickRandom(Node& current)
+{
+	static unsigned long x = 123456789;
+	static unsigned long y = 362436069;
+	static unsigned long z = 521288629;
+
+	unsigned long t;
+	x ^= x << 16;
+	x ^= x >> 5;
+	x ^= x << 1;
+
+	t = x;
+	x = y;
+	y = z;
+	z = t ^ x ^ y;
+
+	size_t const randomI = z % current.regions.size();
+	printf("%u\n", randomI);
+	if (current.leaf) return { &current, &(current.regions[randomI]) };
+	return pickRandom(*((Node*)(current.regions[randomI].child)));
 }
 

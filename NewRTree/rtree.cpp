@@ -576,7 +576,6 @@ std::tuple<Node*, MBB*> RTree::pickRandom(Node& current)
 	z = t ^ x ^ y;
 
 	size_t const randomI = z % current.regions.size();
-	printf("%u\n", randomI);
 	if (current.leaf) return { &current, &(current.regions[randomI]) };
 	return pickRandom(*((Node*)(current.regions[randomI].child)));
 }

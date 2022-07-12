@@ -46,6 +46,8 @@ int main()
     a.insert({ {454 ,126}, {470 ,126}, {470 ,137}, {454 ,137} });
     a.insert({ {611 ,258}, {625 ,258}, {625 ,263}, {611 ,263} });
     a.print();
-    r.eraseRandom();
+    a.erase({ 50,50 }, { 150,150 });
+    a.print();
+    a.eraseRandom();
     a.print();
 }

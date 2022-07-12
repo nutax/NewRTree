@@ -15,7 +15,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#define ORDER 3
+static constexpr size_t ORDER = 3;
+static constexpr size_t MINIMUM = (ORDER/2) + (ORDER%2);
 
 struct Vec2 {
 	float x, y;
@@ -58,7 +59,8 @@ public:
 	void forEachMBB(std::function<void(MBB const&, int, int)> const& fun);
 	void forEachNearest(int k, Vec2 const& vec2, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun);
 	size_t size() const;
-	float testOverlapping(std::vector<Vec2> const& testPoints);
+	double testOverlapping(std::vector<Vec2> const& testPoints);
+	void eraseRandom();
 
 private:
 	void freeMemory(Node* current);
@@ -79,7 +81,8 @@ private:
 	void updateParentsAfterRemoval(Node& current);
 	void updateSizeAfterRemoval(Node& subCurrent);
 	void reinsertExcept(Node& subCurrent, void* except);
-	
+	void testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter);
+	void eraseRandomHelper();
 
 	
 	size_t _size;

@@ -35,6 +35,7 @@ void RTree::insert(Poly const& poly)
 void RTree::print()
 {
 	std::printf("\n\n\nRTREE PRINT  | LINE == NODE |  BFS ORDER | SIZE = %u\n\n", _size);
+	if (_root == nullptr) return;
 	std::queue<Node*> bfs;
 	bfs.push(_root);
 	while (!(bfs.empty())) {
@@ -125,29 +126,16 @@ size_t RTree::size() const
 	return _size;
 }
 
-float RTree::testOverlapping(std::vector<Vec2> const& testPoints)
+double RTree::testOverlapping(std::vector<Vec2> const& testPoints)
 {
-	if (_root == nullptr || testPoints.size() == 0) return 0;
-	float overlapping = 0;
-	float total = 0;
-	std::queue<Node*> bfs;
-	bfs.push(_root);
-	while (!(bfs.empty())) {
-		auto& front = bfs.front();
-		for (auto& mbb : front->regions) {
-			total += 1;
-			for (auto const& testPoint : testPoints) {
-				if (isInside(testPoint, mbb)) overlapping += 1;
-			}
-		}
-		if (!(front->leaf)) {
-			for (auto& mbb : front->regions) {
-				bfs.push((Node*)(mbb.child));
-			}
-		}
-		bfs.pop();
+	if (_root == nullptr) return 0;
+
+	double overlaps = 0;
+	for (auto const& testPoint : testPoints) {
+		testOverlappingHelper(testPoint, *_root, overlaps);
 	}
-	return (overlapping) / (total * testPoints.size());
+	
+	return (overlaps) / (_size * testPoints.size());
 }
 
 MBB RTree::buildMBB(Poly const& poly)
@@ -278,7 +266,7 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 	regions[seed1] = regions.back(); regions.pop_back();
 	
 
-	while (!(regions.empty())) {
+	while (updatedNode.regions.size() < MINIMUM && newNode.regions.size() < MINIMUM) {
 		float const densityU = computeDensity(updatedMBB, regions.back());
 		float const densityN = computeDensity(newMBB, regions.back());
 		if (densityU > densityN) {
@@ -305,6 +293,21 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 			}
 		}
 		regions.pop_back();
+	}
+
+	if (updatedNode.regions.size() == MINIMUM) {
+		for (auto& mbb : regions) {
+			if (!(updatedNode.leaf)) ((Node*)(mbb.child))->parent = &updatedNode;
+			expandMBB(newMBB, mbb);
+			newNode.regions.push_back(mbb);
+		}
+	}
+	else {
+		for (auto& mbb : regions) {
+			if (!(updatedNode.leaf)) ((Node*)(mbb.child))->parent = &updatedNode;
+			expandMBB(updatedMBB, mbb);
+			updatedNode.regions.push_back(mbb);
+		}
 	}
 
 }
@@ -405,7 +408,7 @@ BFS_END:
 		_root = nullptr;
 		return false;
 	}
-	while (current->parent != nullptr && current->regions.size() == 1) {
+	while (current->parent != nullptr && current->regions.size() == MINIMUM) {
 		toReinsert = &(findChild(*(current->parent), current));
 		current = current->parent;
 	}
@@ -499,6 +502,24 @@ void RTree::reinsertExcept(Node& subCurrent, void* except)
 		for (auto& mbb : subCurrent.regions) {
 			reinsertExcept(*((Node*)(mbb.child)), except);
 			delete mbb.child;
+		}
+	}
+}
+
+void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter)
+{
+	int options = 0;
+	for (auto& mbb : current.regions) {
+		options += isInside(testPoint, mbb);
+	}
+	if (options == 0) {
+		counter += 1;
+		return;
+	}
+	if (!(current.leaf)) {
+		counter += options;
+		for (auto& mbb : current.regions) {
+			testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter);
 		}
 	}
 }

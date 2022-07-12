@@ -48,4 +48,5 @@ int main()
     a.print();
     a.erase({ 50,50 }, { 150, 150 });
     a.print();
+    a.erase({ 0,0 }, { 800, 800 });
 }

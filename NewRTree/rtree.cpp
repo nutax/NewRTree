@@ -131,11 +131,12 @@ double RTree::testOverlapping(std::vector<Vec2> const& testPoints)
 	if (_root == nullptr) return 0;
 
 	double overlaps = 0;
+	double total = 0;
 	for (auto const& testPoint : testPoints) {
-		testOverlappingHelper(testPoint, *_root, overlaps);
+		testOverlappingHelper(testPoint, *_root, overlaps, total);
 	}
 	
-	return (overlaps) / (_size * testPoints.size());
+	return ((overlaps) / (overlaps + testPoints.size()));
 }
 
 void RTree::eraseRandom()
@@ -433,9 +434,13 @@ bool RTree::isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb)
 void* RTree::removeSubTree(Node& current, MBB& toReinsert)
 {
 	void* subTree = toReinsert.child;
-	auto it = std::find_if(std::begin(current.regions), std::end(current.regions), 
-		[&toReinsert](MBB& a) { return &a == &toReinsert;  });
-	current.regions.erase(it);
+	
+	for (int i = 0; i < current.regions.size(); ++i) {
+		if (&(current.regions[i]) == &toReinsert) {
+			current.regions.erase(current.regions.begin() + i);
+			break;
+		}
+	}
 
 	updateParentsAfterRemoval(current);
 
@@ -496,17 +501,18 @@ void RTree::reinsertExcept(Node& subCurrent, void* except)
 	}
 }
 
-void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter)
+void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter, double& total)
 {
+	total += 1;
 	int options = 0;
 	for (auto& mbb : current.regions) {
 		if (isInside(testPoint, mbb)) {
 			options = 1;
 			if (current.leaf) counter += 1;
-			else testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter);
+			else testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter, total);
 		} 
 	}
-	counter += !options;
+	//counter += !options;
 }
 
 std::tuple<Node*, MBB*> RTree::pickRandom(Node& current)
@@ -558,5 +564,3 @@ void RTree::eraseSelected(Node* current, MBB* toErase)
 	delete toDelete;
 	return;
 }
-
-

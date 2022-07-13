@@ -83,7 +83,7 @@ protected:
 	void updateParentsAfterRemoval(Node& current);
 	void updateSizeAfterRemoval(Node& subCurrent);
 	void reinsertExcept(Node& subCurrent, void* except);
-	void testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter);
+	void testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter, double& total);
 	std::tuple<Node*, MBB*> pickRandom(Node& current);
 
 	

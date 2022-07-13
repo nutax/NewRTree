@@ -40,11 +40,13 @@ void RTree::print()
 	bfs.push(_root);
 	while (!(bfs.empty())) {
 		auto& front = bfs.front();
+		printf("ADDRESS: %p\n", front);
+		printf("LEFT: %p  |  PARENT: %p  |  RIGHT: %p\n", front->left, front->parent, front->right);
 		if (front->leaf) std::printf("LEAF ");
 		for (auto& mbb : front->regions) {
-			std::printf("R[ X1:%f, Y1:%f, X2:%f, Y2:%f ]  ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y);
+			std::printf("R[(%.1f,%.1f), (%.1f,%.1f), z: %u]  ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y, mbb.z);
 		}
-		std::printf("\n\n");
+		std::printf("\n\n\n");
 		if (!(front->leaf)) {
 			for (auto& mbb : front->regions) {
 				bfs.push((Node*)(mbb.child));
@@ -481,11 +483,13 @@ void RTree::updateParents(Node& current)
 		[](MBB const& a, MBB const& b) {return a.max.x < b.max.x; });
 	auto ymax = std::max_element(std::begin(current.regions), std::end(current.regions),
 		[](MBB const& a, MBB const& b) {return a.max.y < b.max.y; });
+	auto zmax = std::max_element(std::begin(current.regions), std::end(current.regions),
+		[](MBB const& a, MBB const& b) {return a.z < b.z; });
 
 	MBB& mbb = findChild(*(current.parent), &current);
 	mbb.min = { xmin->min.x, ymin->min.y };
 	mbb.max = { xmax->max.x, ymax->max.y };
-
+	mbb.z = zmax->z;
 	updateParents(*(current.parent));
 }
 

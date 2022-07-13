@@ -79,14 +79,31 @@ void HRTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
     for (; i <= ORDER / 2; ++i) updatedNode.regions.push_back(regions[i]);
     for (; i <= ORDER; ++i) newNode.regions.push_back(regions[i]);
 
+
     newNode.right = updatedNode.right;
-    newNode.right->left = &newNode;
+    if(newNode.right != nullptr )newNode.right->left = &newNode;
     newNode.left = &updatedNode;
     updatedNode.right = &newNode;
     updateFamilyRelations(updatedNode);
     updateFamilyRelations(newNode);
 
     updateParents(updatedNode);
+
+    auto xmin = std::min_element(std::begin(newNode.regions), std::end(newNode.regions),
+        [](MBB const& a, MBB const& b) {return a.min.x < b.min.x; });
+    auto ymin = std::min_element(std::begin(newNode.regions), std::end(newNode.regions),
+        [](MBB const& a, MBB const& b) {return a.min.y < b.min.y; });
+    auto xmax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
+        [](MBB const& a, MBB const& b) {return a.max.x < b.max.x; });
+    auto ymax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
+        [](MBB const& a, MBB const& b) {return a.max.y < b.max.y; });
+    auto zmax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
+        [](MBB const& a, MBB const& b) {return a.z < b.z; });
+
+    newMBB.min = { xmin->min.x, ymin->min.y };
+    newMBB.max = { xmax->max.x, ymax->max.y };
+    newMBB.z = zmax->z;
+
 }
 
 

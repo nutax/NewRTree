@@ -89,7 +89,6 @@ protected:
 	std::tuple<Node*, MBB*> pickRandom(Node& current);
 	void updateFamilyRelations(Node& current);
 
-	
 	size_t _size;
 	Node* _root;
 	int _height;

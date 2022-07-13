@@ -59,17 +59,17 @@ void RTree::erase(Vec2 const& min, Vec2 const& max)
 	while (eraseHelper(min, max));
 }
 
-void RTree::forEachPoly(std::function<void(Poly const&)> const& fun)
+void RTree::for_each_poly(std::function<void(Poly const&)> fun)
 {
 	if(_root != nullptr) forEachPolyHelper(fun, *_root);
 }
 
-void RTree::forEachMBB(std::function<void(MBB const&, int, int)> const& fun)
+void RTree::for_each_MBB(std::function<void(MBB const&, int, int)> const& fun)
 {
 	if (_root != nullptr) forEachMBBHelper(fun, *_root, 0);
 }
 
-void RTree::forEachNearest(int k, Vec2 const& fromPoint, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun)
+void RTree::for_each_nearest(int k, Vec2 const& fromPoint, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun)
 {
 	if (_root == nullptr) return;
 
@@ -363,18 +363,18 @@ std::tuple<Vec2, float> RTree::computeMinDist(Vec2 const& fromPoint, MBB const& 
 {
 	Vec2 toPoint;
 
-	toPoint.x = fromPoint.x + 
-		(fromPoint.x < toMBB.min.x) * (fromPoint.x - toMBB.min.x) +
+	toPoint.x = fromPoint.x +
+		(fromPoint.x < toMBB.min.x) * (toMBB.min.x - fromPoint.x) +
 		(fromPoint.x > toMBB.max.x) * (toMBB.max.x - fromPoint.x);
 	toPoint.y = fromPoint.y +
-		(fromPoint.y < toMBB.min.y) * (fromPoint.y - toMBB.min.y) +
+		(fromPoint.y < toMBB.min.y) * (toMBB.min.y - fromPoint.y) +
 		(fromPoint.y > toMBB.max.y) * (toMBB.max.y - fromPoint.y);
 
 	float const xdiff = toPoint.x - fromPoint.x;
 	float const ydiff = toPoint.y - fromPoint.y;
 	float const distance = xdiff * xdiff + ydiff * ydiff;
 
-	return {toPoint, distance};
+	return { toPoint, distance };
 }
 
 bool RTree::isInside(Vec2 const& vec2, MBB const& mbb)

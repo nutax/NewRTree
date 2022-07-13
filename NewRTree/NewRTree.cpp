@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include "rtree.h"
+#include "gui.h"
+#include <fstream>
 
 
 int main()
@@ -20,10 +22,10 @@ int main()
     r.insert({ {35,16}, {36,19} });
     r.insert({ {35,16}, {36,19} });
     r.insert({ {35,16}, {36,19} });
-    //r.print();
+    r.print();
 
     r.erase({17,12}, {43,19});
-    //r.print();
+    r.print();
 
 
     RTree a;
@@ -39,15 +41,57 @@ int main()
     a.insert({ {268 ,343}, {283 ,343}, {283 ,352}, {268 ,352} });
     a.insert({ {156 ,32}, {166 ,32}, {166 ,44}, {156 ,44} });
     a.insert({ {673 ,73}, {695 ,73}, {695 ,87}, {673 ,87} });
-    /*a.insert({ {319 ,179}, {328 ,179}, {328 ,185}, {319 ,185} });
+    a.insert({ {319 ,179}, {328 ,179}, {328 ,185}, {319 ,185} });
     a.insert({ {108 ,203}, {119 ,203}, {119 ,208}, {108 ,208} });
     a.insert({ {461 ,0}, {474 ,0}, {474 ,6}, {461 ,6} });
     a.insert({ {739 ,239}, {747 ,239}, {747 ,247}, {739 ,247} });
     a.insert({ {454 ,126}, {470 ,126}, {470 ,137}, {454 ,137} });
-    a.insert({ {611 ,258}, {625 ,258}, {625 ,263}, {611 ,263} });*/
+    a.insert({ {611 ,258}, {625 ,258}, {625 ,263}, {611 ,263} });
     a.print();
     a.erase({ 50,50 }, { 150,150 });
     a.print();
-   /* a.eraseRandom();
-    a.print();*/
+    a.eraseRandom();
+    a.print();
+
+    Gui gui;
+    while (gui.window.isOpen())
+    {
+        gui.EventHandler();
+
+        gui.window.clear();
+
+        gui.draw_layout();
+
+        gui.draw();
+        /*
+
+        hilbert_tree.for_each_polygon(draw_poly);
+
+        auto pos = sf::Mouse::getPosition(window);
+
+        if (variable)
+            hilbert_tree.for_each_nearest(variable, { pos.x, pos.y }, draw_nearest);
+
+        if (HILBERT_MODE) hilbert_tree.for_each_box(draw_box_hilbert);
+        else r_tree.for_each_box(draw_box_r);
+
+        if ((sf::Mouse::getPosition(window).x > horizontal_offset / 2 && sf::Mouse::getPosition(window).x < width - horizontal_offset / 2
+            && sf::Mouse::getPosition(window).y > vertical_offset / 2 && sf::Mouse::getPosition(window).y < height - vertical_offset / 2)) {
+            int radius = 4;
+            sf::CircleShape* shape = new sf::CircleShape(radius);
+            shape->setPosition(sf::Mouse::getPosition(window).x - radius, sf::Mouse::getPosition(window).y - radius);
+            shape->setFillColor(sf::Color(250, 250, 250));
+            window.draw(*shape);
+            window.setMouseCursorVisible(false);
+        }
+        else {
+            window.setMouseCursorVisible(true);
+        }*/
+
+
+        gui.window.display();
+
+
+
+    }
 }

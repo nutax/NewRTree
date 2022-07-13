@@ -53,9 +53,9 @@ public:
 	void insert(Poly const& poly);
 	void print();
 	void erase(Vec2 const& min, Vec2 const& max);
-	void forEachPoly(std::function<void(Poly const&)> const& fun);
-	void forEachMBB(std::function<void(MBB const&, int, int)> const& fun);
-	void forEachNearest(int k, Vec2 const& vec2, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun);
+	void for_each_poly(std::function<void(Poly const&)> fun);
+	void for_each_MBB(std::function<void(MBB const&, int, int)> const& fun);
+	void for_each_nearest(int k, Vec2 const& vec2, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun);
 	size_t size() const;
 	double testOverlapping(std::vector<Vec2> const& testPoints);
 	void eraseRandom();

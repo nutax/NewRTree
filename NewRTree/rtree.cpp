@@ -147,30 +147,8 @@ void RTree::eraseRandom()
 		delete _root;
 		_root = nullptr;
 	}
-	auto [current, toReinsert] = pickRandom(*_root);
-	void* toDelete = toReinsert->child;
-	while (current->parent != nullptr && current->regions.size() == MINIMUM) {
-		toReinsert = &(findChild(*(current->parent), current));
-		current = current->parent;
-	}
-	if (current->parent == nullptr) {
-		void* subTree = _root;
-		_root = nullptr;
-		_size = 0;
-		_height = 0;
-		reinsertExcept(*((Node*)subTree), toDelete);
-		delete subTree;
-		delete toDelete;
-		return;
-	}
-	void* subTree = removeSubTree(*current, *toReinsert);
-	if (subTree == toDelete) {
-		delete toDelete;
-		return;
-	}
-	reinsertExcept(*((Node*)subTree), toDelete);
-	delete subTree;
-	delete toDelete;
+	auto [current, toErase] = pickRandom(*_root);
+	eraseSelected(current, toErase);
 }
 
 MBB RTree::buildMBB(Poly const& poly)
@@ -413,8 +391,7 @@ bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
 	std::queue<Node*> bfs;
 	bfs.push(_root);
 	Node* current= nullptr;
-	MBB* toReinsert = nullptr;
-	void* toDelete = nullptr;
+	MBB* toErase = nullptr;
 
 	while (!(bfs.empty())) {
 		auto& front = bfs.front();
@@ -422,8 +399,7 @@ bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
 			if (isIntersecting(min, max, mbb)) {
 				if (front->leaf) {
 					current = front;
-					toReinsert = &mbb;
-					toDelete = mbb.child;
+					toErase = &mbb;
 					goto BFS_END;
 				}
 				else {
@@ -435,7 +411,7 @@ bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
 	}
 
 BFS_END:
-	if (toDelete == nullptr) return false;
+	if (toErase == nullptr) return false;
 	if (_size == 1) {
 		_size = 0;
 		_height = 0;
@@ -443,28 +419,7 @@ BFS_END:
 		_root = nullptr;
 		return false;
 	}
-	while (current->parent != nullptr && current->regions.size() == MINIMUM) {
-		toReinsert = &(findChild(*(current->parent), current));
-		current = current->parent;
-	}
-	if (current->parent == nullptr) {
-		void* subTree = _root;
-		_root = nullptr;
-		_size = 0;
-		_height = 0;
-		reinsertExcept(*((Node*)subTree), toDelete);
-		delete subTree;
-		delete toDelete;
-		return true;
-	}
-	void* subTree = removeSubTree(*current, *toReinsert);
-	if (subTree == toDelete) {
-		delete toDelete;
-		return true;
-	}
-	reinsertExcept(*((Node*)subTree), toDelete);
-	delete subTree;
-	delete toDelete;
+	eraseSelected(current, toErase);
 	return true;
 }
 
@@ -545,18 +500,13 @@ void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, double& 
 {
 	int options = 0;
 	for (auto& mbb : current.regions) {
-		options += isInside(testPoint, mbb);
+		if (isInside(testPoint, mbb)) {
+			options = 1;
+			if (current.leaf) counter += 1;
+			else testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter);
+		} 
 	}
-	if (options == 0) {
-		counter += 1;
-		return;
-	}
-	if (!(current.leaf)) {
-		counter += options;
-		for (auto& mbb : current.regions) {
-			testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter);
-		}
-	}
+	counter += !options;
 }
 
 std::tuple<Node*, MBB*> RTree::pickRandom(Node& current)
@@ -579,4 +529,34 @@ std::tuple<Node*, MBB*> RTree::pickRandom(Node& current)
 	if (current.leaf) return { &current, &(current.regions[randomI]) };
 	return pickRandom(*((Node*)(current.regions[randomI].child)));
 }
+
+void RTree::eraseSelected(Node* current, MBB* toErase)
+{
+	auto& toReinsert = toErase;
+	void* toDelete = toReinsert->child;
+	while (current->parent != nullptr && current->regions.size() == MINIMUM) {
+		toReinsert = &(findChild(*(current->parent), current));
+		current = current->parent;
+	}
+	if (current->parent == nullptr) {
+		void* subTree = _root;
+		_root = nullptr;
+		_size = 0;
+		_height = 0;
+		reinsertExcept(*((Node*)subTree), toDelete);
+		delete subTree;
+		delete toDelete;
+		return;
+	}
+	void* subTree = removeSubTree(*current, *toReinsert);
+	if (subTree == toDelete) {
+		delete toDelete;
+		return;
+	}
+	reinsertExcept(*((Node*)subTree), toDelete);
+	delete subTree;
+	delete toDelete;
+	return;
+}
+
 

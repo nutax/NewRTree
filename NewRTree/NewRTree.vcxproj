@@ -141,10 +141,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="hrtree.cpp" />
     <ClCompile Include="NewRTree.cpp" />
     <ClCompile Include="rtree.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="hrtree.h" />
     <ClInclude Include="rtree.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

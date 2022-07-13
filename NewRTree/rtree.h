@@ -12,8 +12,6 @@
 #include <cstdio>
 #include <array>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 
 static constexpr size_t ORDER = 3;
 static constexpr size_t MINIMUM = (ORDER/2) + (ORDER%2);
@@ -23,7 +21,7 @@ struct Vec2 {
 };
 
 struct MBB {
-	int z;
+	unsigned z;
 	Vec2 min, max;
 	void* child;
 };
@@ -62,14 +60,18 @@ public:
 	double testOverlapping(std::vector<Vec2> const& testPoints);
 	void eraseRandom();
 
-private:
+protected:
+	
+	virtual MBB buildMBB(Poly const& poly);
+	virtual void insertHelper(MBB mbb);
+	virtual void split(Node& node, MBB& mbb, MBB& newMBB);
+	virtual void eraseSelected(Node* current, MBB* toErase);
+
+
 	void freeMemory(Node* current);
-	MBB buildMBB(Poly const& poly);
-	void insertHelper(MBB mbb);
 	float computeDensity(MBB const& a, MBB const& b);
 	float computeArea(float xmin, float ymin, float xmax, float ymax);
 	void expandMBB(MBB& expand, MBB const& include);
-	void split(Node& node, MBB& mbb, MBB& newMBB);
 	MBB& findChild(Node& parent, void* child);
 	void forEachPolyHelper(std::function<void(Poly const&)> const& fun, Node& current);
 	void forEachMBBHelper(std::function<void(MBB const&, int, int)> const& fun, Node& current, int lvl);

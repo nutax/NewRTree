@@ -21,9 +21,15 @@
     <ClCompile Include="rtree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hrtree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rtree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hrtree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

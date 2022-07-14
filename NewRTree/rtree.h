@@ -29,7 +29,8 @@ struct MBB {
 struct Node {
 	int leaf = 1;
 	std::vector<MBB> regions;
-	Node *parent = nullptr, *left = nullptr, *right = nullptr;
+	Node* parent = nullptr;
+	//*left = nullptr, * right = nullptr;
 };
 
 
@@ -87,7 +88,9 @@ protected:
 	void reinsertExcept(Node& subCurrent, void* except);
 	void testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter, double& total);
 	std::tuple<Node*, MBB*> pickRandom(Node& current);
-	void updateFamilyRelations(Node& current);
+	//void updateFamilyRelations(Node& current);
+	void sortNode(Node& current);
+	void updateChilds(Node& current);
 
 	size_t _size;
 	Node* _root;

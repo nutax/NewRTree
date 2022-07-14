@@ -13,7 +13,7 @@ protected:
 	bool lendOverflow(Node& current, MBB& newMBB) override;
 	void split(Node& node, MBB& mbb, MBB& newMBB) override;
 	//void eraseSelected(Node* current, MBB* toErase) override;
-	
+	Node* queryLeftSibling(Node& current);
 
 private:
 	void buildHilbertMatrix(float n, float x, float y, float xi, float xj, float yi, float yj);

@@ -33,6 +33,8 @@ MBB HRTree::buildMBB(Poly const& poly)
     mbb.min = { xmin->x, ymin->y };
     mbb.max = { xmax->x, ymax->y };
     mbb.child = new Poly(poly);
+    printf("\n\nTO INSERT : [(%.1f, %.1f), (%.1f, %.1f), z: %u]\n", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y, mbb.z);
+
 
     return mbb;
 }
@@ -49,11 +51,13 @@ MBB& HRTree::queryBestMBB(Node& current, MBB const& newMBB)
 
 bool HRTree::lendOverflow(Node& current, MBB& newMBB)
 {
-    Node* sibling = current.left;
+    Node* sibling = queryLeftSibling(current);
+    int i = 0;
     do {
         if (sibling == nullptr) return false;
         if (sibling->regions.size() < ORDER) break;
-        sibling = sibling->left;
+        sibling = queryLeftSibling(*sibling);
+        ++i;
     } while (true);
     lendOverflowR(current, newMBB);
     return true;
@@ -79,31 +83,77 @@ void HRTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
     for (; i <= ORDER / 2; ++i) updatedNode.regions.push_back(regions[i]);
     for (; i <= ORDER; ++i) newNode.regions.push_back(regions[i]);
 
+    updateChilds(updatedNode);
+    updateChilds(newNode);
 
-    newNode.right = updatedNode.right;
-    if(newNode.right != nullptr )newNode.right->left = &newNode;
-    newNode.left = &updatedNode;
-    updatedNode.right = &newNode;
-    updateFamilyRelations(updatedNode);
-    updateFamilyRelations(newNode);
 
+    //newNode.right = updatedNode.right;
+    //if(newNode.right != nullptr )newNode.right->left = &newNode;
+    //newNode.left = &updatedNode;
+    //updatedNode.right = &newNode;
+    //updateFamilyRelations(updatedNode);
+    //updateFamilyRelations(newNode);
+
+    auto xmin = std::min_element(std::begin(updatedNode.regions), std::end(updatedNode.regions),
+        [](MBB const& a, MBB const& b) {return a.min.x < b.min.x; });
+    auto ymin = std::min_element(std::begin(updatedNode.regions), std::end(updatedNode.regions),
+        [](MBB const& a, MBB const& b) {return a.min.y < b.min.y; });
+    auto xmax = std::max_element(std::begin(updatedNode.regions), std::end(updatedNode.regions),
+        [](MBB const& a, MBB const& b) {return a.max.x < b.max.x; });
+    auto ymax = std::max_element(std::begin(updatedNode.regions), std::end(updatedNode.regions),
+        [](MBB const& a, MBB const& b) {return a.max.y < b.max.y; });
+    auto zmax = std::max_element(std::begin(updatedNode.regions), std::end(updatedNode.regions),
+        [](MBB const& a, MBB const& b) {return a.z < b.z; });
+    updatedMBB.min = { xmin->min.x, ymin->min.y };
+    updatedMBB.max = { xmax->max.x, ymax->max.y };
+    updatedMBB.z = zmax->z;
     updateParents(updatedNode);
 
-    auto xmin = std::min_element(std::begin(newNode.regions), std::end(newNode.regions),
+    xmin = std::min_element(std::begin(newNode.regions), std::end(newNode.regions),
         [](MBB const& a, MBB const& b) {return a.min.x < b.min.x; });
-    auto ymin = std::min_element(std::begin(newNode.regions), std::end(newNode.regions),
+    ymin = std::min_element(std::begin(newNode.regions), std::end(newNode.regions),
         [](MBB const& a, MBB const& b) {return a.min.y < b.min.y; });
-    auto xmax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
+    xmax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
         [](MBB const& a, MBB const& b) {return a.max.x < b.max.x; });
-    auto ymax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
+    ymax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
         [](MBB const& a, MBB const& b) {return a.max.y < b.max.y; });
-    auto zmax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
+    zmax = std::max_element(std::begin(newNode.regions), std::end(newNode.regions),
         [](MBB const& a, MBB const& b) {return a.z < b.z; });
 
     newMBB.min = { xmin->min.x, ymin->min.y };
     newMBB.max = { xmax->max.x, ymax->max.y };
     newMBB.z = zmax->z;
 
+
+    //updateParents(updatedNode);
+    //updateParents(newNode);
+}
+
+Node* HRTree::queryLeftSibling(Node& current)
+{
+    int i = 0;
+    int j = 0;
+    Node* ancestor = current.parent;
+    while (true) {
+        if (ancestor == nullptr) return nullptr;
+
+        ++j;
+        i = 0;
+        for (auto& mbb : current.parent->regions) {
+            if (mbb.child == &current) break;
+            ++i;
+        }
+
+        if (i > 0) break;
+        ancestor = ancestor->parent;
+    }
+    --j;
+    Node* sibling = ((Node*)(ancestor->regions[i - 1].child));
+    for (; j > 0; --j) {
+        sibling = ((Node*)(sibling->regions.back().child));
+    }
+    return sibling;
+    
 }
 
 
@@ -125,17 +175,17 @@ void HRTree::lendOverflowR(Node& current, MBB& newMBB)
 {
     if (current.regions.size() < ORDER) {
         current.regions.push_back(newMBB);
-        updateFamilyRelations(current);
+        //updateFamilyRelations(current);
         updateParents(current);
     }
     else if(current.regions.front().z < newMBB.z) {
         MBB aux = current.regions.front();
         current.regions[0] = newMBB;
-        updateFamilyRelations(current);
+        //updateFamilyRelations(current);
         updateParents(current);
-        lendOverflowR(*(current.left), aux);
+        lendOverflowR(*(queryLeftSibling(current)), aux);
     }
     else {
-        lendOverflowR(*(current.left), newMBB);
+        lendOverflowR(*(queryLeftSibling(current)), newMBB);
     }
 }

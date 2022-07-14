@@ -55,6 +55,7 @@ void generate_random_poly_hrtree(HRTree* rtree) {
     if (id == 15) {
         std::cout << "Inserting polygon: " << id << "\n";
     }*/
+    
     rtree->insert({ p1, p2, p3, p4 });
     rtree->print();
     /*std::cout << "Done inserting polygon: " << id << "\n";*/
@@ -321,7 +322,7 @@ std::vector<double> test_search_rtree(int tests_cases, int inserts) {
 
 
 int main() {
-    print_vector(test_insert_hrtree(1, 10));
+    //print_vector(test_insert_hrtree(1, 1000));
     //    print_vector(test_insert_hrtree(1, 500));
     //    print_vector(test_delete_rtree(1, 5));
     //    print_vector(test_insert_rtree(100, 500)); a
@@ -330,4 +331,21 @@ int main() {
     //    print_vector(test_knn_rtree(100, 5, 1));
     //    print_vector(test_knn_rtree(100, 5, 5));
     //    print_vector(test_knn_rtree(100, 5, 20));
+
+    HRTree r(WIDTH, HEIGHT);
+    r.insert({ {216.0, 162.0}, {227.0, 170.0} });
+    r.insert({ { 315.0, 408.0  }, {  328.0, 417.0  } });
+    r.insert({ { 356.0, 433.0  }, {  378.0, 444.0  } });
+    r.insert({ {  470.0, 462.0 }, {  479.0, 469.0  } });
+    r.insert({ { 259.0, 224.0  }, {  277.0, 230.0  } });
+    r.insert({ { 512.0, 316.0  }, {  524.0, 328.0  } });
+    r.insert({ { 544.0, 399.0  }, {  556.0, 413.0  } });
+    r.insert({ { 656.0, 282.0  }, { 664.0, 296.0  } });
+    r.insert({ { 440.0, 222.0  }, {  455.0, 236.0  } });
+    r.insert({ { 760.0, 449.0  }, { 772.0, 454.0   } });
+    r.insert({ { 735.0, 109.0  }, {  747.0, 122.0  } });
+    r.print();
+    r.insert({ {  336.0, 42.0 }, {  359.0, 48.0  } });
+    r.print();
+
 }

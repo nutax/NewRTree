@@ -9,7 +9,7 @@ RTree::RTree()
 
 RTree::~RTree()
 {
-	if(_root != nullptr) freeMemory(_root);
+	//if(_root != nullptr) freeMemory(_root);
 }
 
 void RTree::freeMemory(Node* current)
@@ -24,7 +24,11 @@ void RTree::freeMemory(Node* current)
 			freeMemory((Node*)(mbb.child));
 		}
 	}
-	delete current;
+	try { delete current; }
+	catch (std::exception e) {
+
+	}
+
 }
 
 void RTree::insert(Poly const& poly)
@@ -40,13 +44,15 @@ void RTree::print()
 	bfs.push(_root);
 	while (!(bfs.empty())) {
 		auto& front = bfs.front();
-		printf("ADDRESS: %p\n", front);
-		printf("LEFT: %p  |  PARENT: %p  |  RIGHT: %p\n", front->left, front->parent, front->right);
-		if (front->leaf) std::printf("LEAF ");
+
+		if (front == _root) printf("ADR: %p | PAR: %p | ROOT \n", front, front->parent);
+		else if (front->leaf) printf("ADR: %p | PAR: %p | LEAF \n", front, front->parent);
+		else printf("ADR: %p | PAR: %p | INTERNAL \n", front, front->parent);
 		for (auto& mbb : front->regions) {
 			std::printf("R[(%.1f,%.1f), (%.1f,%.1f), z: %u]  ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y, mbb.z);
 		}
-		std::printf("\n\n\n");
+		if(front->regions.size() == 0) std::printf("EMPTY");
+		std::printf("\n\n");
 		if (!(front->leaf)) {
 			for (auto& mbb : front->regions) {
 				bfs.push((Node*)(mbb.child));
@@ -202,7 +208,9 @@ void RTree::insertHelper(MBB newMBB)
 		const unsigned regionSize = current->regions.size();
 		if (regionSize < ORDER) {
 			current->regions.push_back(newMBB);
-			updateFamilyRelations(*current);
+			//updateFamilyRelations(*current);
+			sortNode(*current);
+			updateChilds(*current);
 			updateParents(*current);
 			return;
 		}
@@ -218,17 +226,25 @@ void RTree::insertHelper(MBB newMBB)
 	}
 
 	Node* newRoot = new Node;
+	newRoot->parent = nullptr;
 	newRoot->leaf = 0;
 	newRoot->regions.push_back(updatedMBB);
 	newRoot->regions.push_back(newMBB);
-	Node* a = (Node*) (updatedMBB.child);
-	Node* b = (Node*) (newMBB.child);
-	a->left = b;
-	b->right = a;
-	a->parent = newRoot;
-	b->parent = newRoot;
+	updateChilds(*newRoot);
+	//Node* a = (Node*) (updatedMBB.child);
+	//Node* b = (Node*) (newMBB.child);
+	///*a->left = nullptr;
+	//a->right = b;
+	//b->right = nullptr;
+	//b->left = a;*/
+	//a->parent = newRoot;
+	//b->parent = newRoot;
 	_root = newRoot;
-	updateFamilyRelations(*_root);
+	//updateFamilyRelations(*_root);
+	//updateFamilyRelations(*a);
+	//updateFamilyRelations(*b);
+	//updateParents(*a);
+	//updateParents(*b);
 }
 
 float RTree::computeDensity(MBB const& a, MBB const& b)
@@ -556,40 +572,54 @@ std::tuple<Node*, MBB*> RTree::pickRandom(Node& current)
 	return pickRandom(*((Node*)(current.regions[randomI].child)));
 }
 
-void RTree::updateFamilyRelations(Node& current)
+//void RTree::updateFamilyRelations(Node& current)
+//{
+//	std::sort(std::begin(current.regions), std::end(current.regions),
+//		[](MBB const& a, MBB const& b) { return a.z < b.z; });
+//
+//	if (current.leaf) return;
+//
+//	if (current.left != nullptr) {
+//		((Node*)(current.left->regions.back().child))->right = ((Node*)(current.regions.front().child));
+//		((Node*)(current.regions.front().child))->left = ((Node*)(current.left->regions.back().child));
+//	}
+//	else {
+//		((Node*)(current.regions.front().child))->left = nullptr;
+//	}
+//	((Node*)(current.regions[1].child))->left = ((Node*)(current.regions.front().child));
+//	((Node*)(current.regions.front().child))->right = ((Node*)(current.regions[1].child));
+//	((Node*)(current.regions.front().child))->parent = &current;
+//	int i;
+//	for (i = 1; i < (current.regions.size() - 1); ++i) {
+//		((Node*)(current.regions[i - 1].child))->right = ((Node*)(current.regions[i].child));
+//		((Node*)(current.regions[i].child))->left = ((Node*)(current.regions[i - 1].child));
+//		((Node*)(current.regions[i + 1].child))->left = ((Node*)(current.regions[i].child));
+//		((Node*)(current.regions[i].child))->right = ((Node*)(current.regions[i + 1].child));
+//		((Node*)(current.regions[i].child))->parent = &current;
+//	}
+//	((Node*)(current.regions[i - 1].child))->right = ((Node*)(current.regions[i].child));
+//	((Node*)(current.regions[i].child))->left = ((Node*)(current.regions[i - 1].child));
+//	((Node*)(current.regions[i].child))->parent = &current;
+//	if (current.right != nullptr) {
+//		((Node*)(current.right->regions.front().child))->left = ((Node*)(current.regions[i].child));
+//		((Node*)(current.regions[i].child))->right = ((Node*)(current.right->regions.front().child));
+//	}
+//	else {
+//		((Node*)(current.regions[i].child))->right = nullptr;
+//	}
+//}
+
+void RTree::sortNode(Node& current)
 {
 	std::sort(std::begin(current.regions), std::end(current.regions),
 		[](MBB const& a, MBB const& b) { return a.z < b.z; });
+}
 
+void RTree::updateChilds(Node& current)
+{
 	if (current.leaf) return;
-
-	if (current.left != nullptr) {
-		((Node*)(current.left->regions.back().child))->right = ((Node*)(current.regions.front().child));
-		((Node*)(current.regions.front().child))->left = ((Node*)(current.left->regions.back().child));
-	}
-	else {
-		((Node*)(current.regions.front().child))->left = nullptr;
-	}
-	((Node*)(current.regions[1].child))->left = ((Node*)(current.regions.front().child));
-	((Node*)(current.regions.front().child))->right = ((Node*)(current.regions[1].child));
-	((Node*)(current.regions.front().child))->parent = &current;
-	int i;
-	for (i = 1; i < (current.regions.size() - 1); ++i) {
-		((Node*)(current.regions[i - 1].child))->right = ((Node*)(current.regions[i].child));
-		((Node*)(current.regions[i].child))->left = ((Node*)(current.regions[i - 1].child));
-		((Node*)(current.regions[i + 1].child))->left = ((Node*)(current.regions[i].child));
-		((Node*)(current.regions[i].child))->right = ((Node*)(current.regions[i + 1].child));
-		((Node*)(current.regions[i].child))->parent = &current;
-	}
-	((Node*)(current.regions[i - 1].child))->right = ((Node*)(current.regions[i].child));
-	((Node*)(current.regions[i].child))->left = ((Node*)(current.regions[i - 1].child));
-	((Node*)(current.regions[i].child))->parent = &current;
-	if (current.right != nullptr) {
-		((Node*)(current.right->regions.front().child))->left = ((Node*)(current.regions[i].child));
-		((Node*)(current.regions[i].child))->right = ((Node*)(current.right->regions.front().child));
-	}
-	else {
-		((Node*)(current.regions[i].child))->right = nullptr;
+	for (auto& mbb : current.regions) {
+		((Node*)(mbb.child))->parent = &current;
 	}
 }
 

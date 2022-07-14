@@ -63,11 +63,13 @@ public:
 protected:
 	
 	virtual MBB buildMBB(Poly const& poly);
-	virtual void insertHelper(MBB mbb);
+	virtual MBB& queryBestMBB(Node& current, MBB const& newMBB);
 	virtual void split(Node& node, MBB& mbb, MBB& newMBB);
 	virtual void eraseSelected(Node* current, MBB* toErase);
+	virtual bool lendOverflow(Node& current, MBB& newMBB);
+	
 
-
+	void insertHelper(MBB mbb);
 	void freeMemory(Node* current);
 	float computeDensity(MBB const& a, MBB const& b);
 	float computeArea(float xmin, float ymin, float xmax, float ymax);
@@ -80,13 +82,13 @@ protected:
 	bool eraseHelper(Vec2 const& min, Vec2 const& max);
 	bool isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb);
 	void* removeSubTree(Node& current, MBB& toReinsert);
-	void updateParentsAfterRemoval(Node& current);
+	void updateParents(Node& current);
 	void updateSizeAfterRemoval(Node& subCurrent);
 	void reinsertExcept(Node& subCurrent, void* except);
-	void testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter);
+	void testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter, double& total);
 	std::tuple<Node*, MBB*> pickRandom(Node& current);
+	void updateFamilyRelations(Node& current);
 
-	
 	size_t _size;
 	Node* _root;
 	int _height;

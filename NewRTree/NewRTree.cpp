@@ -1,7 +1,6 @@
-// NewRTree.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
+#include <random>
+#include <chrono>
 #include "rtree.h"
 #include "gui.h"
 #include <fstream>

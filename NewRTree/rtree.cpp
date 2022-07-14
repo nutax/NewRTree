@@ -40,11 +40,13 @@ void RTree::print()
 	bfs.push(_root);
 	while (!(bfs.empty())) {
 		auto& front = bfs.front();
+		printf("ADDRESS: %p\n", front);
+		printf("LEFT: %p  |  PARENT: %p  |  RIGHT: %p\n", front->left, front->parent, front->right);
 		if (front->leaf) std::printf("LEAF ");
 		for (auto& mbb : front->regions) {
-			std::printf("R[ X1:%f, Y1:%f, X2:%f, Y2:%f ]  ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y);
+			std::printf("R[(%.1f,%.1f), (%.1f,%.1f), z: %u]  ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y, mbb.z);
 		}
-		std::printf("\n\n");
+		std::printf("\n\n\n");
 		if (!(front->leaf)) {
 			for (auto& mbb : front->regions) {
 				bfs.push((Node*)(mbb.child));
@@ -131,11 +133,12 @@ double RTree::testOverlapping(std::vector<Vec2> const& testPoints)
 	if (_root == nullptr) return 0;
 
 	double overlaps = 0;
+	double total = 0;
 	for (auto const& testPoint : testPoints) {
-		testOverlappingHelper(testPoint, *_root, overlaps);
+		testOverlappingHelper(testPoint, *_root, overlaps, total);
 	}
 	
-	return (overlaps) / (_size * testPoints.size());
+	return ((overlaps) / (overlaps + testPoints.size()));
 }
 
 void RTree::eraseRandom()
@@ -164,6 +167,20 @@ MBB RTree::buildMBB(Poly const& poly)
 	return mbb;
 }
 
+MBB& RTree::queryBestMBB(Node& current, MBB const& newMBB)
+{
+	int j = 0;
+	auto maxDensity = computeDensity(current.regions[j], newMBB);
+	for (int i = 1; i < current.regions.size(); ++i) {
+		auto localDensity = computeDensity(current.regions[i], newMBB);
+		if ( localDensity > maxDensity) {
+			j = i;
+			maxDensity = localDensity;
+		}
+	}
+	return current.regions[j];
+}
+
 void RTree::insertHelper(MBB newMBB)
 {
 	_size++;
@@ -176,18 +193,21 @@ void RTree::insertHelper(MBB newMBB)
 
 	Node* current = _root;
 	while (!(current->leaf)) {
-		auto bestMBB = std::max_element(std::begin(current->regions), std::end(current->regions),
-			[this, &newMBB](MBB const& a, MBB const& b) {return computeDensity(a, newMBB) < computeDensity(b, newMBB); });
-		expandMBB(*bestMBB, newMBB);
-		current = (Node*) (bestMBB->child);
+		MBB& bestMBB = queryBestMBB(*current, newMBB);
+		current = (Node*) (bestMBB.child);
 	}
 
 	MBB updatedMBB;
 	while (true) {
-		if (current->regions.size() < ORDER) {
+		const unsigned regionSize = current->regions.size();
+		if (regionSize < ORDER) {
 			current->regions.push_back(newMBB);
+			updateFamilyRelations(*current);
+			updateParents(*current);
 			return;
 		}
+
+		if (lendOverflow(*current, newMBB)) return;
 
 		split(*current, updatedMBB, newMBB);
 
@@ -208,6 +228,7 @@ void RTree::insertHelper(MBB newMBB)
 	a->parent = newRoot;
 	b->parent = newRoot;
 	_root = newRoot;
+	updateFamilyRelations(*_root);
 }
 
 float RTree::computeDensity(MBB const& a, MBB const& b)
@@ -255,7 +276,6 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 
 	updatedMBB.child = &updatedNode;
 	updatedNode.regions.clear();
-	 
 	updatedNode.regions.push_back(regions[seed1]);
 	updatedMBB.min = updatedNode.regions.back().min;
 	updatedMBB.max = updatedNode.regions.back().max;
@@ -265,7 +285,6 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 	Node& newNode = *((Node*)(newMBB.child));
 	newNode.leaf = updatedNode.leaf;
 	newNode.parent = updatedNode.parent;
-	if (!(updatedNode.leaf)) ((Node*)(regions.back().child))->parent = &newNode;
 	newNode.regions.push_back(regions[seed2]);
 	newMBB.min = newNode.regions.back().min;
 	newMBB.max = newNode.regions.back().max;
@@ -310,7 +329,7 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 
 	if (updatedNode.regions.size() == MINIMUM) {
 		for (auto& mbb : regions) {
-			if (!(updatedNode.leaf)) ((Node*)(mbb.child))->parent = &updatedNode;
+			if (!(updatedNode.leaf)) ((Node*)(mbb.child))->parent = &newNode;
 			expandMBB(newMBB, mbb);
 			newNode.regions.push_back(mbb);
 		}
@@ -433,11 +452,15 @@ bool RTree::isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb)
 void* RTree::removeSubTree(Node& current, MBB& toReinsert)
 {
 	void* subTree = toReinsert.child;
-	auto it = std::find_if(std::begin(current.regions), std::end(current.regions), 
-		[&toReinsert](MBB& a) { return &a == &toReinsert;  });
-	current.regions.erase(it);
+	
+	for (int i = 0; i < current.regions.size(); ++i) {
+		if (&(current.regions[i]) == &toReinsert) {
+			current.regions.erase(current.regions.begin() + i);
+			break;
+		}
+	}
 
-	updateParentsAfterRemoval(current);
+	updateParents(current);
 
 	if (current.leaf) {
 		_size -= 1;
@@ -448,7 +471,7 @@ void* RTree::removeSubTree(Node& current, MBB& toReinsert)
 	return subTree;
 }
 
-void RTree::updateParentsAfterRemoval(Node& current)
+void RTree::updateParents(Node& current)
 {
 	if (current.parent == nullptr) return;
 
@@ -460,12 +483,14 @@ void RTree::updateParentsAfterRemoval(Node& current)
 		[](MBB const& a, MBB const& b) {return a.max.x < b.max.x; });
 	auto ymax = std::max_element(std::begin(current.regions), std::end(current.regions),
 		[](MBB const& a, MBB const& b) {return a.max.y < b.max.y; });
+	auto zmax = std::max_element(std::begin(current.regions), std::end(current.regions),
+		[](MBB const& a, MBB const& b) {return a.z < b.z; });
 
 	MBB& mbb = findChild(*(current.parent), &current);
 	mbb.min = { xmin->min.x, ymin->min.y };
 	mbb.max = { xmax->max.x, ymax->max.y };
-
-	updateParentsAfterRemoval(*(current.parent));
+	mbb.z = zmax->z;
+	updateParents(*(current.parent));
 }
 
 void RTree::updateSizeAfterRemoval(Node& subCurrent)
@@ -496,17 +521,18 @@ void RTree::reinsertExcept(Node& subCurrent, void* except)
 	}
 }
 
-void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter)
+void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter, double& total)
 {
+	total += 1;
 	int options = 0;
 	for (auto& mbb : current.regions) {
 		if (isInside(testPoint, mbb)) {
 			options = 1;
 			if (current.leaf) counter += 1;
-			else testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter);
+			else testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter, total);
 		} 
 	}
-	counter += !options;
+	//counter += !options;
 }
 
 std::tuple<Node*, MBB*> RTree::pickRandom(Node& current)
@@ -528,6 +554,43 @@ std::tuple<Node*, MBB*> RTree::pickRandom(Node& current)
 	size_t const randomI = z % current.regions.size();
 	if (current.leaf) return { &current, &(current.regions[randomI]) };
 	return pickRandom(*((Node*)(current.regions[randomI].child)));
+}
+
+void RTree::updateFamilyRelations(Node& current)
+{
+	std::sort(std::begin(current.regions), std::end(current.regions),
+		[](MBB const& a, MBB const& b) { return a.z < b.z; });
+
+	if (current.leaf) return;
+
+	if (current.left != nullptr) {
+		((Node*)(current.left->regions.back().child))->right = ((Node*)(current.regions.front().child));
+		((Node*)(current.regions.front().child))->left = ((Node*)(current.left->regions.back().child));
+	}
+	else {
+		((Node*)(current.regions.front().child))->left = nullptr;
+	}
+	((Node*)(current.regions[1].child))->left = ((Node*)(current.regions.front().child));
+	((Node*)(current.regions.front().child))->right = ((Node*)(current.regions[1].child));
+	((Node*)(current.regions.front().child))->parent = &current;
+	int i;
+	for (i = 1; i < (current.regions.size() - 1); ++i) {
+		((Node*)(current.regions[i - 1].child))->right = ((Node*)(current.regions[i].child));
+		((Node*)(current.regions[i].child))->left = ((Node*)(current.regions[i - 1].child));
+		((Node*)(current.regions[i + 1].child))->left = ((Node*)(current.regions[i].child));
+		((Node*)(current.regions[i].child))->right = ((Node*)(current.regions[i + 1].child));
+		((Node*)(current.regions[i].child))->parent = &current;
+	}
+	((Node*)(current.regions[i - 1].child))->right = ((Node*)(current.regions[i].child));
+	((Node*)(current.regions[i].child))->left = ((Node*)(current.regions[i - 1].child));
+	((Node*)(current.regions[i].child))->parent = &current;
+	if (current.right != nullptr) {
+		((Node*)(current.right->regions.front().child))->left = ((Node*)(current.regions[i].child));
+		((Node*)(current.regions[i].child))->right = ((Node*)(current.right->regions.front().child));
+	}
+	else {
+		((Node*)(current.regions[i].child))->right = nullptr;
+	}
 }
 
 void RTree::eraseSelected(Node* current, MBB* toErase)
@@ -559,4 +622,7 @@ void RTree::eraseSelected(Node* current, MBB* toErase)
 	return;
 }
 
-
+bool RTree::lendOverflow(Node& current, MBB& newMBB)
+{
+	return false;
+}

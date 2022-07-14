@@ -29,7 +29,8 @@ struct MBB {
 struct Node {
 	int leaf = 1;
 	std::vector<MBB> regions;
-	Node *parent = nullptr, *left = nullptr, *right = nullptr;
+	Node* parent = nullptr;
+	//*left = nullptr, * right = nullptr;
 };
 
 
@@ -53,9 +54,9 @@ public:
 	void insert(Poly const& poly);
 	void print();
 	void erase(Vec2 const& min, Vec2 const& max);
-	void for_each_poly(std::function<void(Poly const&)> fun);
-	void for_each_MBB(std::function<void(MBB const&, int, int)> const& fun);
-	void for_each_nearest(int k, Vec2 const& vec2, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun);
+	void forEachPoly(std::function<void(Poly const&)> const& fun);
+	void forEachMBB(std::function<void(MBB const&, int, int)> const& fun);
+	void forEachNearest(int k, Vec2 const& vec2, std::function<void(Poly const&, Vec2, Vec2, float)> const& fun);
 	size_t size() const;
 	double testOverlapping(std::vector<Vec2> const& testPoints);
 	void eraseRandom();
@@ -71,7 +72,7 @@ protected:
 
 	void insertHelper(MBB mbb);
 	void freeMemory(Node* current);
-	float computeDensity(MBB const& a, MBB const& b);
+	float computeEnlargement(MBB const& a, MBB const& b);
 	float computeArea(float xmin, float ymin, float xmax, float ymax);
 	void expandMBB(MBB& expand, MBB const& include);
 	MBB& findChild(Node& parent, void* child);
@@ -87,7 +88,9 @@ protected:
 	void reinsertExcept(Node& subCurrent, void* except);
 	void testOverlappingHelper(Vec2 const& testPoint, Node& current, double& counter, double& total);
 	std::tuple<Node*, MBB*> pickRandom(Node& current);
-	void updateFamilyRelations(Node& current);
+	//void updateFamilyRelations(Node& current);
+	void sortNode(Node& current);
+	void updateChilds(Node& current);
 
 	size_t _size;
 	Node* _root;

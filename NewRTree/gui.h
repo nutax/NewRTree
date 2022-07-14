@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/System.hpp>
+#include "hrtree.h"
 
 class Gui
 {
@@ -28,11 +29,11 @@ private:
     
 	
     RTree r_tree;
-    RTree h_tree;
+    HRTree h_tree;
 	
 public:
     sf::RenderWindow window;
-	Gui() {
+	Gui():h_tree(width, height) {
 		window.create(sf::VideoMode(width, height), "R-Tree Eren la Gaviota");
 	}
 
@@ -88,7 +89,7 @@ public:
 
         info.setFont(font);
         title.setFont(font);
-        info.setString("Use el \"LEFT CLICK\" para dibujar puntos y \"ENTER\" para unirlos. \nPuede modificar el K de KNN con \"ESPACIO\".\nCualquier bug o duda, comunicarse con jose.huby@utec.edu.pe\n\"F\" para activar/desactivar FUN MODE");
+        info.setString("Use el \"LEFT CLICK\" para dibujar puntos y \"ENTER\" para unirlos. \nPuede modificar el K de KNN con \"ESPACIO\".\nCualquier bug o duda, comunicarse con jose.huby@utec.edu.pe");
         if (HILBERT_MODE) title.setString("Hilbert-Tree by Eren la Gaviota");
         else title.setString("R-Tree by Eren la Gaviota");
         info.setPosition(sf::Vector2f(horizontal_offset / 2, height - vertical_offset / 2 + 10));
@@ -177,14 +178,14 @@ public:
             window.draw(**it);
         }
 
-        r_tree.for_each_poly([this](const Poly& points) { this->draw_poly(points); });
-		if (HILBERT_MODE) h_tree.for_each_MBB([this](const MBB& mbb, int level, int height) { this->draw_box(mbb, level, height); });
-        else r_tree.for_each_MBB([this](const MBB& mbb, int level, int height) { this->draw_box(mbb, level, height); });
+        r_tree.forEachPoly([this](const Poly& points) { this->draw_poly(points); });
+		if (HILBERT_MODE) h_tree.forEachMBB([this](const MBB& mbb, int level, int height) { this->draw_box(mbb, level, height); });
+        else r_tree.forEachMBB([this](const MBB& mbb, int level, int height) { this->draw_box(mbb, level, height); });
 		
         auto pos = sf::Mouse::getPosition(window);
         if (knn) {
-            if (HILBERT_MODE) h_tree.for_each_nearest(knn, { (float)pos.x, (float)pos.y }, [this](const Poly& poly, Vec2 source, Vec2 target, int distance) { this->draw_nearest(poly, target, source, distance); });
-            else r_tree.for_each_nearest(knn, { (float)pos.x, (float)pos.y }, [this](const Poly& poly, Vec2 source, Vec2 target, int distance) { this->draw_nearest(poly, target, source, distance); });
+            if (HILBERT_MODE) h_tree.forEachNearest(knn, { (float)pos.x, (float)pos.y }, [this](const Poly& poly, Vec2 source, Vec2 target, int distance) { this->draw_nearest(poly, target, source, distance); });
+            else r_tree.forEachNearest(knn, { (float)pos.x, (float)pos.y }, [this](const Poly& poly, Vec2 source, Vec2 target, int distance) { this->draw_nearest(poly, target, source, distance); });
         } 
     }
 	
@@ -279,7 +280,7 @@ public:
             points.clear();
             r_tree.insert(polygon);
             h_tree.insert(polygon);
-            r_tree.print();
+            h_tree.print();
             break;
         }
 

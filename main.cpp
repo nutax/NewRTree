@@ -1,10 +1,12 @@
 #include <iostream>
-#include <random>
-#include <chrono>
-#include "rtree.h"
-#include "gui.h"
+#include "rtree.hpp"
+#include "gui.hpp"
 #include <fstream>
 
+/*
+Como correr:
+    g++ -std=c++17 -g -c main.cpp &&  g++ -g main.o -o sfml-app -lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system && ./sfml-app
+*/
 
 int main()
 {
@@ -20,7 +22,5 @@ int main()
         gui.draw();
 
         gui.window.display();
-
-
     }
 }

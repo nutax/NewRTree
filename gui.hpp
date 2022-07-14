@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/System.hpp>
-#include "hrtree.h"
+#include "hrtree.hpp"
 
 class Gui
 {
@@ -40,18 +40,18 @@ public:
     void draw_layout() {
 
         sf::Texture t = sf::Texture();
-        t.loadFromFile("C:/Users/luis/source/repos/NewRTree/resources/background.jpg");
+        t.loadFromFile("./resources/background.jpg");
         sf::Sprite fun_background(t);
         fun_background.setScale({ width / fun_background.getLocalBounds().width, height / fun_background.getLocalBounds().height });
 
 
         sf::Texture t2 = sf::Texture();
-        t2.loadFromFile("C:/Users/luis/source/repos/NewRTree/resources/jedi.jpeg");
+        t2.loadFromFile("./resources/jedi.jpeg");
         sf::Sprite good_background(t2);
         good_background.setScale({ width / good_background.getLocalBounds().width, height / good_background.getLocalBounds().height });
 
         sf::Texture t3 = sf::Texture();
-        t3.loadFromFile("C:/Users/luis/source/repos/NewRTree/resources/sith.jpg");
+        t3.loadFromFile("./resources/sith.jpg");
         sf::Sprite bad_background(t3);
         bad_background.setScale({ width / bad_background.getLocalBounds().width, height / bad_background.getLocalBounds().height });
 
@@ -69,14 +69,14 @@ public:
         sf::Text title;
         sf::Text info;
         sf::Font font;
-        if (!font.loadFromFile("C:/Users/luis/source/repos/NewRTree/resources/ComicMono.ttf"))
+        if (!font.loadFromFile("./resources/ComicMono.ttf"))
         {
             // cout << "can't load font" << endl;
         }
 
         info.setFont(font);
         title.setFont(font);
-        info.setString("Use el \"LEFT CLICK\" para dibujar puntos y \"ENTER\" para unirlos. \nPuede modificar el K de KNN con \"ESPACIO\".\nCualquier bug o duda, comunicarse con jose.huby@utec.edu.pe");
+        info.setString("Use el \"LEFT CLICK\" para dibujar puntos y \"ENTER\" para unirlos. \nUse el \"RIGHT CLICK\" para eliminar poligonos en un area de 10x10 (solo r tree). \nUse \"H\" para intercambiar estructuras \nPuede modificar el K de KNN con \"ESPACIO\".\nCualquier bug o duda, comunicarse con jose.huby@utec.edu.pe");
         if (HILBERT_MODE) title.setString("Hilbert-Tree by Eren la Gaviota");
         else title.setString("R-Tree by Eren la Gaviota");
         info.setPosition(sf::Vector2f(horizontal_offset / 2, height - vertical_offset / 2 + 10));
@@ -300,4 +300,3 @@ public:
         }
     }
 };
-

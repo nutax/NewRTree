@@ -72,7 +72,7 @@ protected:
 
 	void insertHelper(MBB mbb);
 	void freeMemory(Node* current);
-	float computeDensity(MBB const& a, MBB const& b);
+	float computeEnlargement(MBB const& a, MBB const& b);
 	float computeArea(float xmin, float ymin, float xmax, float ymax);
 	void expandMBB(MBB& expand, MBB const& include);
 	MBB& findChild(Node& parent, void* child);

@@ -176,9 +176,9 @@ MBB RTree::buildMBB(Poly const& poly)
 MBB& RTree::queryBestMBB(Node& current, MBB const& newMBB)
 {
 	int j = 0;
-	auto maxDensity = computeDensity(current.regions[j], newMBB);
+	auto maxDensity = computeEnlargement(current.regions[j], newMBB);
 	for (int i = 1; i < current.regions.size(); ++i) {
-		auto localDensity = computeDensity(current.regions[i], newMBB);
+		auto localDensity = computeEnlargement(current.regions[i], newMBB);
 		if ( localDensity > maxDensity) {
 			j = i;
 			maxDensity = localDensity;
@@ -247,19 +247,12 @@ void RTree::insertHelper(MBB newMBB)
 	//updateParents(*b);
 }
 
-float RTree::computeDensity(MBB const& a, MBB const& b)
+float RTree::computeEnlargement(MBB const& a, MBB const& b)
 {
-	float const xmin = std::min(a.min.x, b.min.x);
-	float const ymin = std::min(a.min.y, b.min.y);
-	float const xmax = std::max(a.max.x, b.max.x);
-	float const ymax = std::max(a.max.y, b.max.y);
+	float const xenlargment = (a.max.x > b.min.x && b.max.x > a.min.x) * (abs(a.max.x - b.max.x) + abs(a.min.x - b.min.x));
+	float const yenlargment = (a.max.y > b.min.y && b.max.y > a.min.y) * (abs(a.max.y - b.max.y) + abs(a.min.y - b.min.y));
 
-
-	float const mass = computeArea(a.min.x, a.min.y, a.max.x, a.max.y) + 
-		computeArea(b.min.x, b.min.y, b.max.x, b.max.y);
-	float const volume = computeArea(xmin, ymin, xmax, ymax);
-
-	return mass / volume;
+	return xenlargment + yenlargment;
 }
 
 float RTree::computeArea(float xmin, float ymin, float xmax, float ymax)
@@ -281,11 +274,11 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 	regions.push_back(newMBB);
 
 	int seed1, seed2;
-	float minDensity = std::numeric_limits<float>::max();
+	float minEnlargment = std::numeric_limits<float>::max();
 	for (int i = 0; i < (ORDER - 1); ++i) {
 		for (int j = i + 1; j < ORDER; ++j) {
-			float density = computeDensity(regions[i], regions[j]);
-			if (density < minDensity) minDensity = density, seed1 = i, seed2 = j;
+			float enlargment = computeEnlargement(regions[i], regions[j]);
+			if (enlargment < minEnlargment) minEnlargment = enlargment, seed1 = i, seed2 = j;
 		}
 	}
 
@@ -304,60 +297,55 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 	newNode.regions.push_back(regions[seed2]);
 	newMBB.min = newNode.regions.back().min;
 	newMBB.max = newNode.regions.back().max;
-
-	if (!(updatedNode.leaf)) {
-		((Node*)(updatedNode.regions.back().child))->parent = &updatedNode;
-		((Node*)(newNode.regions.back().child))->parent = &newNode;
-	}
 	
+
 	regions[seed2] = regions.back(); regions.pop_back();
 	regions[seed1] = regions.back(); regions.pop_back();
 	
 
-	while (updatedNode.regions.size() < MINIMUM && newNode.regions.size() < MINIMUM) {
-		float const densityU = computeDensity(updatedMBB, regions.back());
-		float const densityN = computeDensity(newMBB, regions.back());
-		if (densityU > densityN) {
-			if (!(updatedNode.leaf)) ((Node*)(regions.back().child))->parent = &updatedNode;
-			expandMBB(updatedMBB, regions.back());
-			updatedNode.regions.push_back(regions.back());
+	while (!(regions.empty()) && updatedNode.regions.size() < (ORDER - MINIMUM) && newNode.regions.size() < (ORDER - MINIMUM)) {
+		int selectedMBB = 0;
+		int selectedNode = 0;
+		float maxDiffEnlargment = std::numeric_limits<float>::min();
+		for (int i = 0; i < regions.size(); ++i) {
+			float const updatedNodeEnlargment = computeEnlargement(updatedMBB, regions[i]);
+			float const newNodeEnlargment = computeEnlargement(newMBB, regions[i]);
+			int const node = updatedNodeEnlargment < newNodeEnlargment;
+			float const diffEnlargment = 
+				node*(newNodeEnlargment - updatedNodeEnlargment) + 
+				node*(updatedNodeEnlargment - newNodeEnlargment);
+			if (maxDiffEnlargment < diffEnlargment) {
+				selectedMBB = i;
+				selectedNode = node;
+				maxDiffEnlargment = diffEnlargment;
+			}
 		}
-		else if (densityU < densityN) {
-			if (!(updatedNode.leaf)) ((Node*)(regions.back().child))->parent = &newNode;
-			expandMBB(newMBB, regions.back());
-			newNode.regions.push_back(regions.back());
-
+		if (selectedNode) {
+			expandMBB(newMBB, regions[selectedMBB]);
+			newNode.regions.push_back(regions[selectedMBB]);
 		}
 		else {
-			if (newNode.regions.size() > updatedNode.regions.size()) {
-				if (!(updatedNode.leaf)) ((Node*)(regions.back().child))->parent = &updatedNode;
-				expandMBB(updatedMBB, regions.back());
-				updatedNode.regions.push_back(regions.back());
-			}
-			else { 
-				if (!(updatedNode.leaf)) ((Node*)(regions.back().child))->parent = &newNode;
-				expandMBB(newMBB, regions.back());
-				newNode.regions.push_back(regions.back());
-			}
+			expandMBB(updatedMBB, regions[selectedMBB]);
+			updatedNode.regions.push_back(regions[selectedMBB]);
 		}
+		regions[selectedMBB] = regions.back();
 		regions.pop_back();
 	}
 
 	if (updatedNode.regions.size() == MINIMUM) {
 		for (auto& mbb : regions) {
-			if (!(updatedNode.leaf)) ((Node*)(mbb.child))->parent = &newNode;
 			expandMBB(newMBB, mbb);
 			newNode.regions.push_back(mbb);
 		}
 	}
 	else {
 		for (auto& mbb : regions) {
-			if (!(updatedNode.leaf)) ((Node*)(mbb.child))->parent = &updatedNode;
 			expandMBB(updatedMBB, mbb);
 			updatedNode.regions.push_back(mbb);
 		}
 	}
-
+	updateChilds(updatedNode);
+	updateChilds(newNode);
 }
 
 MBB& RTree::findChild(Node& parent, void* child)

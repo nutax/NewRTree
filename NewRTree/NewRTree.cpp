@@ -332,7 +332,7 @@ int main() {
     //    print_vector(test_knn_rtree(100, 5, 5));
     //    print_vector(test_knn_rtree(100, 5, 20));
 
-    HRTree r(WIDTH, HEIGHT);
+    /*HRTree r(WIDTH, HEIGHT);
     r.insert({ {216.0, 162.0}, {227.0, 170.0} });
     r.insert({ { 315.0, 408.0  }, {  328.0, 417.0  } });
     r.insert({ { 356.0, 433.0  }, {  378.0, 444.0  } });
@@ -346,6 +346,6 @@ int main() {
     r.insert({ { 735.0, 109.0  }, {  747.0, 122.0  } });
     r.print();
     r.insert({ {  336.0, 42.0 }, {  359.0, 48.0  } });
-    r.print();
+    r.print();*/
 
 }

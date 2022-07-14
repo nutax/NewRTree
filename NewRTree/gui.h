@@ -76,7 +76,7 @@ public:
 
         info.setFont(font);
         title.setFont(font);
-        info.setString("Use el \"LEFT CLICK\" para dibujar puntos y \"ENTER\" para unirlos. \nPuede modificar el K de KNN con \"ESPACIO\".\nCualquier bug o duda, comunicarse con jose.huby@utec.edu.pe");
+        info.setString("Use el \"LEFT CLICK\" para dibujar puntos y \"ENTER\" para unirlos. \nUse el \"RIGHT CLICK\" para eliminar poligonos en un area de 10x10 (solo r tree). \nUse \"H\" para intercambiar estructuras \nPuede modificar el K de KNN con \"ESPACIO\".\nCualquier bug o duda, comunicarse con jose.huby@utec.edu.pe");
         if (HILBERT_MODE) title.setString("Hilbert-Tree by Eren la Gaviota");
         else title.setString("R-Tree by Eren la Gaviota");
         info.setPosition(sf::Vector2f(horizontal_offset / 2, height - vertical_offset / 2 + 10));

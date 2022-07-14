@@ -51,7 +51,7 @@ void RTree::print()
 		for (auto& mbb : front->regions) {
 			std::printf("R[(%.1f,%.1f), (%.1f,%.1f), z: %u]  ", mbb.min.x, mbb.min.y, mbb.max.x, mbb.max.y, mbb.z);
 		}
-		if(front->regions.size() == 0) std::printf("EMPTY");
+		if (front->regions.size() == 0) std::printf("EMPTY");
 		std::printf("\n\n");
 		if (!(front->leaf)) {
 			for (auto& mbb : front->regions) {
@@ -69,7 +69,7 @@ void RTree::erase(Vec2 const& min, Vec2 const& max)
 
 void RTree::forEachPoly(std::function<void(Poly const&)> const& fun)
 {
-	if(_root != nullptr) forEachPolyHelper(fun, *_root);
+	if (_root != nullptr) forEachPolyHelper(fun, *_root);
 }
 
 void RTree::forEachMBB(std::function<void(MBB const&, int, int)> const& fun)
@@ -89,7 +89,7 @@ void RTree::forEachNearest(int k, Vec2 const& fromPoint, std::function<void(Poly
 	};
 
 	std::priority_queue<Neighbor, std::vector<Neighbor>,
-		decltype(compareNeighbor)> neighbors{compareNeighbor};
+		decltype(compareNeighbor)> neighbors{ compareNeighbor };
 	std::priority_queue<Neighborhood, std::vector<Neighborhood>,
 		decltype(compareNeighborhood)> neighborhoods{ compareNeighborhood };
 
@@ -103,10 +103,10 @@ void RTree::forEachNearest(int k, Vec2 const& fromPoint, std::function<void(Poly
 			if (closestNeighborhood.node->leaf) {
 				for (auto& mbb : closestNeighborhood.node->regions) {
 					auto const& farestNeighbor = neighbors.top();
-					auto [ toPoint, distance ] = computeMinDist(fromPoint, mbb);
+					auto [toPoint, distance] = computeMinDist(fromPoint, mbb);
 					if (distance < farestNeighbor.distance) {
 						neighbors.pop();
-						neighbors.push({((Poly*)(mbb.child)), distance, toPoint});
+						neighbors.push({ ((Poly*)(mbb.child)), distance, toPoint });
 					}
 				}
 			}
@@ -143,7 +143,7 @@ double RTree::testOverlapping(std::vector<Vec2> const& testPoints)
 	for (auto const& testPoint : testPoints) {
 		testOverlappingHelper(testPoint, *_root, overlaps, total);
 	}
-	
+
 	return ((overlaps) / (overlaps + testPoints.size()));
 }
 
@@ -179,7 +179,7 @@ MBB& RTree::queryBestMBB(Node& current, MBB const& newMBB)
 	auto maxDensity = computeEnlargement(current.regions[j], newMBB);
 	for (int i = 1; i < current.regions.size(); ++i) {
 		auto localDensity = computeEnlargement(current.regions[i], newMBB);
-		if ( localDensity > maxDensity) {
+		if (localDensity > maxDensity) {
 			j = i;
 			maxDensity = localDensity;
 		}
@@ -200,7 +200,7 @@ void RTree::insertHelper(MBB newMBB)
 	Node* current = _root;
 	while (!(current->leaf)) {
 		MBB& bestMBB = queryBestMBB(*current, newMBB);
-		current = (Node*) (bestMBB.child);
+		current = (Node*)(bestMBB.child);
 	}
 
 	MBB updatedMBB;
@@ -220,7 +220,7 @@ void RTree::insertHelper(MBB newMBB)
 		split(*current, updatedMBB, newMBB);
 
 		if (current->parent == nullptr) break;
-		
+
 		findChild(*(current->parent), current) = updatedMBB;
 		current = current->parent;
 	}
@@ -257,7 +257,7 @@ float RTree::computeEnlargement(MBB const& a, MBB const& b)
 
 float RTree::computeArea(float xmin, float ymin, float xmax, float ymax)
 {
-	return (xmax - xmin)*(ymax - ymin);
+	return (xmax - xmin) * (ymax - ymin);
 }
 
 void RTree::expandMBB(MBB& expand, MBB const& include)
@@ -297,13 +297,13 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 	newNode.regions.push_back(regions[seed2]);
 	newMBB.min = newNode.regions.back().min;
 	newMBB.max = newNode.regions.back().max;
-	
+
 
 	regions[seed2] = regions.back(); regions.pop_back();
 	regions[seed1] = regions.back(); regions.pop_back();
-	
 
-	while (!(regions.empty()) && updatedNode.regions.size() < (ORDER - MINIMUM) && newNode.regions.size() < (ORDER - MINIMUM)) {
+
+	while (!(regions.empty()) && updatedNode.regions.size() < MINIMUM && newNode.regions.size() < MINIMUM) {
 		int selectedMBB = 0;
 		int selectedNode = 0;
 		float maxDiffEnlargment = std::numeric_limits<float>::min();
@@ -311,9 +311,9 @@ void RTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
 			float const updatedNodeEnlargment = computeEnlargement(updatedMBB, regions[i]);
 			float const newNodeEnlargment = computeEnlargement(newMBB, regions[i]);
 			int const node = updatedNodeEnlargment < newNodeEnlargment;
-			float const diffEnlargment = 
-				node*(newNodeEnlargment - updatedNodeEnlargment) + 
-				node*(updatedNodeEnlargment - newNodeEnlargment);
+			float const diffEnlargment =
+				node * (newNodeEnlargment - updatedNodeEnlargment) +
+				!node * (updatedNodeEnlargment - newNodeEnlargment);
 			if (maxDiffEnlargment < diffEnlargment) {
 				selectedMBB = i;
 				selectedNode = node;
@@ -413,7 +413,7 @@ bool RTree::eraseHelper(Vec2 const& min, Vec2 const& max)
 
 	std::queue<Node*> bfs;
 	bfs.push(_root);
-	Node* current= nullptr;
+	Node* current = nullptr;
 	MBB* toErase = nullptr;
 
 	while (!(bfs.empty())) {
@@ -448,7 +448,7 @@ BFS_END:
 
 bool RTree::isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb)
 {
-	return 
+	return
 		(mbb.min.x <= max.x && mbb.max.x >= min.x) &&
 		(mbb.min.y <= max.y && mbb.max.y >= min.y);
 }
@@ -456,7 +456,7 @@ bool RTree::isIntersecting(Vec2 const& min, Vec2 const& max, MBB const& mbb)
 void* RTree::removeSubTree(Node& current, MBB& toReinsert)
 {
 	void* subTree = toReinsert.child;
-	
+
 	for (int i = 0; i < current.regions.size(); ++i) {
 		if (&(current.regions[i]) == &toReinsert) {
 			current.regions.erase(current.regions.begin() + i);
@@ -514,7 +514,7 @@ void RTree::reinsertExcept(Node& subCurrent, void* except)
 {
 	if (subCurrent.leaf) {
 		for (auto& mbb : subCurrent.regions) {
-			if(mbb.child != except) insertHelper(mbb);
+			if (mbb.child != except) insertHelper(mbb);
 		}
 	}
 	else {
@@ -534,7 +534,7 @@ void RTree::testOverlappingHelper(Vec2 const& testPoint, Node& current, double& 
 			options = 1;
 			if (current.leaf) counter += 1;
 			else testOverlappingHelper(testPoint, *((Node*)(mbb.child)), counter, total);
-		} 
+		}
 	}
 	//counter += !options;
 }

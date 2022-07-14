@@ -6,7 +6,7 @@ public:
 	HRTree(int weight, int height);
 	~HRTree();
 
-	
+
 protected:
 	MBB buildMBB(Poly const& poly) override;
 	MBB& queryBestMBB(Node& current, MBB const& newMBB) override;

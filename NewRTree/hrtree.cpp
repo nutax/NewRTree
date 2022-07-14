@@ -2,10 +2,10 @@
 
 HRTree::HRTree(int weight, int height) : RTree()
 {
-	_hilbertDimSize = std::max(weight, height);
-    float n = (float) ceil(log(_hilbertDimSize) / log(2));
-	_hilbertDimSize = pow(2, ceil(log((double)_hilbertDimSize) / log(2)));
-	_hilbertMatrix = std::vector<std::vector<int>>((int)_hilbertDimSize, std::vector<int>((int)_hilbertDimSize));
+    _hilbertDimSize = std::max(weight, height);
+    float n = (float)ceil(log(_hilbertDimSize) / log(2));
+    _hilbertDimSize = pow(2, ceil(log((double)_hilbertDimSize) / log(2)));
+    _hilbertMatrix = std::vector<std::vector<int>>((int)_hilbertDimSize, std::vector<int>((int)_hilbertDimSize));
     buildHilbertMatrix(n, 0, 0, _hilbertDimSize, 0, 0, _hilbertDimSize);
 }
 
@@ -28,7 +28,7 @@ MBB HRTree::buildMBB(Poly const& poly)
     auto ymin = std::min_element(std::begin(poly), std::end(poly), [](Vec2 const& a, Vec2 const& b) {return a.y < b.y; });
     auto xmax = std::max_element(std::begin(poly), std::end(poly), [](Vec2 const& a, Vec2 const& b) {return a.x < b.x; });
     auto ymax = std::max_element(std::begin(poly), std::end(poly), [](Vec2 const& a, Vec2 const& b) {return a.y < b.y; });
-    
+
     mbb.z = _hilbertMatrix[xavg][yavg];
     mbb.min = { xmin->x, ymin->y };
     mbb.max = { xmax->x, ymax->y };
@@ -70,7 +70,7 @@ void HRTree::split(Node& updatedNode, MBB& updatedMBB, MBB& newMBB)
     regions.push_back(newMBB);
     std::sort(std::begin(regions), std::end(regions),
         [](MBB const& a, MBB const& b) { return a.z < b.z; });
-    
+
     updatedMBB.child = &updatedNode;
     updatedNode.regions.clear();
 
@@ -153,7 +153,7 @@ Node* HRTree::queryLeftSibling(Node& current)
         sibling = ((Node*)(sibling->regions.back().child));
     }
     return sibling;
-    
+
 }
 
 
@@ -178,7 +178,7 @@ void HRTree::lendOverflowR(Node& current, MBB& newMBB)
         //updateFamilyRelations(current);
         updateParents(current);
     }
-    else if(current.regions.front().z < newMBB.z) {
+    else if (current.regions.front().z < newMBB.z) {
         MBB aux = current.regions.front();
         current.regions[0] = newMBB;
         //updateFamilyRelations(current);

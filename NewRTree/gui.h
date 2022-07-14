@@ -3,12 +3,13 @@
 #include <SFML/Audio.hpp>
 #include <SFML/System.hpp>
 #include "hrtree.h"
+#include <filesystem>
 
 class Gui
 {
 private:
 	sf::Color guiColor = sf::Color(250, 250, 250);
-
+    std::filesystem::path cwd;
 	const int width = 800, height = 500;
     const int vertical_offset = 150;
     const int horizontal_offset = 50;
@@ -30,28 +31,32 @@ private:
 	
     RTree r_tree;
     HRTree h_tree;
+
+
 	
 public:
     sf::RenderWindow window;
 	Gui():h_tree(width, height) {
 		window.create(sf::VideoMode(width, height), "R-Tree Eren la Gaviota");
+        cwd = std::filesystem::current_path();
+		
 	}
 
     void draw_layout() {
-
+		
         sf::Texture t = sf::Texture();
-        t.loadFromFile("C:/Users/luis/source/repos/NewRTree/resources/background.jpg");
+        t.loadFromFile(cwd.string() + "/resources/background.jpg");
         sf::Sprite fun_background(t);
         fun_background.setScale({ width / fun_background.getLocalBounds().width, height / fun_background.getLocalBounds().height });
 
 
         sf::Texture t2 = sf::Texture();
-        t2.loadFromFile("C:/Users/luis/source/repos/NewRTree/resources/jedi.jpeg");
+        t2.loadFromFile(cwd.string() + "/resources/jedi.jpeg");
         sf::Sprite good_background(t2);
         good_background.setScale({ width / good_background.getLocalBounds().width, height / good_background.getLocalBounds().height });
 
         sf::Texture t3 = sf::Texture();
-        t3.loadFromFile("C:/Users/luis/source/repos/NewRTree/resources/sith.jpg");
+        t3.loadFromFile(cwd.string() + "/resources/sith.jpg");
         sf::Sprite bad_background(t3);
         bad_background.setScale({ width / bad_background.getLocalBounds().width, height / bad_background.getLocalBounds().height });
 
@@ -69,7 +74,7 @@ public:
         sf::Text title;
         sf::Text info;
         sf::Font font;
-        if (!font.loadFromFile("C:/Users/luis/source/repos/NewRTree/resources/ComicMono.ttf"))
+        if (!font.loadFromFile(cwd.string() + "/resources/ComicMono.ttf"))
         {
             // cout << "can't load font" << endl;
         }

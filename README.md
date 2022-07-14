@@ -1,8 +1,10 @@
 # NewRTree
 ## Informe
-[CLick aquí](https://www.overleaf.com/read/vxkmdztxydsp)
+[Click aquí](https://www.overleaf.com/read/vxkmdztxydsp)
 ## Presentación
-[CLick aquí](https://docs.google.com/presentation/d/1vC5TYz4MlJO5x-nSv70hjuG0TJmf-CS9YIQ8qKS1ISo/edit?usp=sharing)
+[Click aquí](https://docs.google.com/presentation/d/1vC5TYz4MlJO5x-nSv70hjuG0TJmf-CS9YIQ8qKS1ISo/edit?usp=sharing)
+## Video
+[Click aquí](https://www.youtube.com/watch?v=t2ufdmN5eQg&ab_channel=LuisBerrospi)
 ## Ejecutar
 #### Master Branch
 Para correr en Windows abra el .sln en visual studio
